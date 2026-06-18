@@ -13,6 +13,8 @@
     "@kakera/shared": "*",
     "expo": "~51.0.0",
     "expo-router": "~3.5.0",
+    "expo-linking": "~6.3.1",
+    "expo-constants": "~16.0.2",
     "expo-status-bar": "~1.12.0",
     "expo-camera": "~15.0.0",
     "expo-barcode-scanner": "~13.0.0",
