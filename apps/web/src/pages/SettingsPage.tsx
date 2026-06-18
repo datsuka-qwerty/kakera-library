@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { authApi } from "../lib/api/auth";
-import { mediaTypesApi, sharingApi, backupApi, usersApi } from "../lib/api/misc";
+import { mediaTypesApi, sharingApi, backupApi, usersApi, exportImportApi } from "../lib/api/misc";
 import { useAuthStore } from "../store/authStore";
 import Modal from "../components/ui/Modal";
 import clsx from "clsx";
 
-type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "backup" | "users";
+type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "data" | "backup" | "users";
 
 const CATEGORIES = ["book", "movie", "drama"] as const;
 const CATEGORY_LABELS = { book: "本", movie: "映画", drama: "ドラマ" };
@@ -23,6 +24,7 @@ export default function SettingsPage() {
     { key: "security", label: "セキュリティ" },
     { key: "sharing", label: "共有" },
     { key: "mediaTypes", label: "メディアタイプ" },
+    { key: "data", label: "データ" },
     { key: "backup", label: "バックアップ", adminOnly: true },
     { key: "users", label: "ユーザー管理", adminOnly: true },
   ].filter((t) => !t.adminOnly || user?.role === "admin");
@@ -55,6 +57,7 @@ export default function SettingsPage() {
           {tab === "security" && <SecurityTab />}
           {tab === "sharing" && <SharingTab />}
           {tab === "mediaTypes" && <MediaTypesTab qc={qc} />}
+          {tab === "data" && <DataTab />}
           {tab === "backup" && <BackupTab />}
           {tab === "users" && <UsersTab qc={qc} />}
         </div>
@@ -153,6 +156,7 @@ function SecurityTab() {
 function SharingTab() {
   const qc = useQueryClient();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const { data: allUsers } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
   const { data: dashShares } = useQuery({ queryKey: ["dashboardShares"], queryFn: sharingApi.listDashboardShares });
   const { data: ratingShares } = useQuery({ queryKey: ["ratingShares"], queryFn: sharingApi.listRatingShares });
@@ -179,10 +183,20 @@ function SharingTab() {
           {others.map((u) => {
             const shared = dashShares?.some((s) => s.userId === u.id) ?? false;
             return (
-              <label key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
-                <span className="text-sm">{u.username}</span>
-                <input type="checkbox" checked={shared} onChange={(e) => toggleDashShare(u.id, e.target.checked)} className="w-4 h-4" />
-              </label>
+              <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={shared} onChange={(e) => toggleDashShare(u.id, e.target.checked)} className="w-4 h-4" />
+                    {u.username}
+                  </label>
+                </div>
+                <button
+                  onClick={() => navigate(`/dashboard/shared/${u.id}`)}
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  ダッシュボードを見る →
+                </button>
+              </div>
             );
           })}
           {others.length === 0 && <p className="text-sm text-gray-400">他のユーザーがいません</p>}
@@ -255,6 +269,70 @@ function MediaTypesTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function DataTab() {
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [importResult, setImportResult] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportImportApi.exportData();
+    } catch {
+      alert("エクスポートに失敗しました");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!confirm("現在のデータにインポートしますか？既存データと重複するIDはスキップされます。")) {
+      e.target.value = "";
+      return;
+    }
+    setImporting(true);
+    setImportResult(null);
+    try {
+      await exportImportApi.importData(file);
+      setImportResult("インポートが完了しました");
+    } catch {
+      setImportResult("インポートに失敗しました");
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-md">
+      <div>
+        <h3 className="font-semibold mb-1">データのエクスポート</h3>
+        <p className="text-xs text-gray-400 mb-3">書籍・映画・ドラマのデータをJSONファイルとしてダウンロードします</p>
+        <button onClick={handleExport} disabled={exporting} className="btn-primary">
+          {exporting ? "エクスポート中..." : "JSONでエクスポート"}
+        </button>
+      </div>
+      <hr className="border-gray-200 dark:border-gray-700" />
+      <div>
+        <h3 className="font-semibold mb-1">データのインポート</h3>
+        <p className="text-xs text-gray-400 mb-3">エクスポートしたJSONファイルからデータを復元します</p>
+        <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+        <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn-secondary">
+          {importing ? "インポート中..." : "JSONファイルを選択"}
+        </button>
+        {importResult && (
+          <p className={`text-sm mt-2 ${importResult.includes("失敗") ? "text-red-500" : "text-green-600"}`}>
+            {importResult}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

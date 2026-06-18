@@ -7,6 +7,7 @@ import BooksPage from "./pages/BooksPage";
 import MoviesPage from "./pages/MoviesPage";
 import DramasPage from "./pages/DramasPage";
 import SettingsPage from "./pages/SettingsPage";
+import SharedDashboardPage from "./pages/SharedDashboardPage";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.accessToken);
@@ -28,6 +29,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard/shared/:userId" element={<SharedDashboardPage />} />
         <Route path="books" element={<BooksPage />} />
         <Route path="movies" element={<MoviesPage />} />
         <Route path="dramas" element={<DramasPage />} />

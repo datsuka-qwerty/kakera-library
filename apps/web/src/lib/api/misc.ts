@@ -50,6 +50,23 @@ export const backupApi = {
   restore: (filename: string) => apiClient.post(`/admin/backup/restore/${filename}`),
 };
 
+export const exportImportApi = {
+  exportData: async () => {
+    const res = await apiClient.get("/export", { responseType: "blob" });
+    const url = URL.createObjectURL(new Blob([res.data as BlobPart]));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kakera-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  importData: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return apiClient.post("/import", form, { headers: { "Content-Type": "multipart/form-data" } });
+  },
+};
+
 export const usersApi = {
   list: () => apiClient.get<{ id: string; username: string; email: string; role: string }[]>("/users").then((r) => r.data),
   create: (data: { username: string; email: string; password: string; role?: string }) =>

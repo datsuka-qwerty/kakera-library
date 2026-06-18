@@ -1,13 +1,12 @@
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { BookOpen, Film, Tv, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Film, Tv } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { dashboardApi, sharingApi, usersApi } from "../lib/api/misc";
-import { useAuthStore } from "../store/authStore";
+import { dashboardApi } from "../lib/api/misc";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
@@ -25,21 +24,28 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
   );
 }
 
-export default function DashboardPage() {
-  const { t } = useTranslation();
+export default function SharedDashboardPage() {
+  const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboardStats"],
-    queryFn: dashboardApi.getStats,
-  });
-  const { data: allUsers } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
-  const { data: dashShares } = useQuery({ queryKey: ["dashboardShares"], queryFn: sharingApi.listDashboardShares });
+  const { t } = useTranslation();
 
-  const sharedUsers = allUsers?.filter((u) => u.id !== user?.id && dashShares?.some((s) => s.userId === u.id)) ?? [];
+  const { data: stats, isLoading, isError } = useQuery({
+    queryKey: ["sharedDashboardStats", userId],
+    queryFn: () => dashboardApi.getUserStats(userId!),
+    enabled: !!userId,
+  });
 
   if (isLoading) return <p className="text-sm text-gray-400">{t("common.loading")}</p>;
-  if (!stats) return null;
+  if (isError || !stats) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+          <ArrowLeft size={16} /> 戻る
+        </button>
+        <p className="text-sm text-red-500">ダッシュボードを閲覧できません。共有が許可されていない可能性があります。</p>
+      </div>
+    );
+  }
 
   const booksByStatus = Object.entries(stats.books.byStatus).map(([k, v]) => ({
     name: t(`book.statuses.${k}`), value: v,
@@ -51,7 +57,6 @@ export default function DashboardPage() {
     name: t(`drama.statuses.${k}`), value: v,
   }));
 
-  // Monthly combined
   const allMonths = Array.from(new Set([
     ...Object.keys(stats.books.byMonth),
     ...Object.keys(stats.movies.byMonth),
@@ -67,33 +72,22 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">{t("nav.dashboard")}</h2>
-        {sharedUsers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Users size={14} className="text-gray-400" />
-            <span className="text-xs text-gray-400">共有:</span>
-            {sharedUsers.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => navigate(`/dashboard/shared/${u.id}`)}
-                className="text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                {u.username}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft size={16} /> 戻る
+        </button>
+        <h2 className="text-xl font-bold">共有ダッシュボード</h2>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         <StatCard icon={BookOpen} label="本（合計）" value={stats.books.total} color="bg-indigo-500" />
         <StatCard icon={Film} label="映画（合計）" value={stats.movies.total} color="bg-emerald-500" />
         <StatCard icon={Tv} label="ドラマ（合計）" value={stats.dramas.total} color="bg-amber-500" />
       </div>
 
-      {/* Monthly bar chart */}
       {monthlyData.length > 0 && (
         <div className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm font-semibold mb-4">月別コンテンツ数（直近12ヶ月）</h3>
@@ -111,7 +105,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Pie charts */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "本 ステータス分布", data: booksByStatus },
