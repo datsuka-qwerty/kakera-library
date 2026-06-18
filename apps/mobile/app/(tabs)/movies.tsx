@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from "expo-router";
 import { Plus, Search, X } from "lucide-react-native";
 import { moviesApi } from "../../lib/api";
-import type { Movie } from "@kakera/shared";
+import type { Movie, MovieStatus } from "@kakera/shared";
 import StatusBadge from "../../components/ui/StatusBadge";
 import StarRating from "../../components/ui/StarRating";
 import CoverImage from "../../components/ui/CoverImage";
@@ -145,8 +145,8 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
         title: title.trim(),
         directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
         status,
-        rating: rating ?? null,
-        memo: memo.trim() || null,
+        rating: rating ?? undefined,
+        memo: memo.trim() || undefined,
       };
       if (initial) {
         await moviesApi.update(initial.id, payload);
@@ -205,7 +205,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
         <Text style={f.label}>ステータス</Text>
         <View style={f.statusRow}>
           {STATUSES.filter((st) => st.value).map((st) => (
-            <Pressable key={st.value} style={[f.statusChip, status === st.value && f.statusChipActive]} onPress={() => setStatus(st.value)}>
+            <Pressable key={st.value} style={[f.statusChip, status === st.value && f.statusChipActive]} onPress={() => setStatus(st.value as MovieStatus)}>
               <Text style={[f.statusChipText, status === st.value && f.statusChipTextActive]}>{st.label}</Text>
             </Pressable>
           ))}

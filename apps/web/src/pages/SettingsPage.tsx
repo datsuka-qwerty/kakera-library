@@ -27,7 +27,7 @@ export default function SettingsPage() {
     { key: "data", label: "データ" },
     { key: "backup", label: "バックアップ", adminOnly: true },
     { key: "users", label: "ユーザー管理", adminOnly: true },
-  ].filter((t) => !t.adminOnly || user?.role === "admin");
+  ].filter((t) => !t.adminOnly || user?.role === "admin") as { key: Tab; label: string; adminOnly?: boolean }[];
 
   return (
     <div className="space-y-4">
@@ -66,7 +66,7 @@ export default function SettingsPage() {
   );
 }
 
-function ProfileTab({ user, clearAuth }: { user: ReturnType<typeof useAuthStore>["user"]; clearAuth: () => void }) {
+function ProfileTab({ user, clearAuth }: { user: { id: string; username: string; email: string; role: string } | null; clearAuth: () => void }) {
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const updateMutation = useMutation({

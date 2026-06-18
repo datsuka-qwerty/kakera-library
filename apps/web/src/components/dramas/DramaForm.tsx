@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import type { Drama, DramaCreateInput } from "@kakera/shared";
+import type { Drama, DramaCreateInput, DramaStatus } from "@kakera/shared";
 import { dramasApi } from "../../lib/api/dramas";
 import { mediaTypesApi } from "../../lib/api/misc";
 import StarRating from "../ui/StarRating";
@@ -126,7 +126,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
         </div>
         <div>
           <label className="form-label">{t("drama.status")}</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+          <select value={status} onChange={(e) => setStatus(e.target.value as DramaStatus)} className="input">
             {STATUSES.map((s) => <option key={s} value={s}>{t(`drama.statuses.${s}`)}</option>)}
           </select>
         </div>

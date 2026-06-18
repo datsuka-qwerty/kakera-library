@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from "expo-router";
 import { Plus, Search, X } from "lucide-react-native";
 import { dramasApi } from "../../lib/api";
-import type { Drama } from "@kakera/shared";
+import type { Drama, DramaStatus } from "@kakera/shared";
 import StatusBadge from "../../components/ui/StatusBadge";
 import StarRating from "../../components/ui/StarRating";
 import CoverImage from "../../components/ui/CoverImage";
@@ -146,11 +146,11 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
     try {
       const payload = {
         title: title.trim(),
-        totalSeasons: totalSeasons ? parseInt(totalSeasons, 10) : null,
+        totalSeasons: totalSeasons ? parseInt(totalSeasons, 10) : undefined,
         status,
-        currentSeason: currentSeason ? parseInt(currentSeason, 10) : null,
-        rating: rating ?? null,
-        memo: memo.trim() || null,
+        currentSeason: currentSeason ? parseInt(currentSeason, 10) : undefined,
+        rating: rating ?? undefined,
+        memo: memo.trim() || undefined,
       };
       if (initial) {
         await dramasApi.update(initial.id, payload);
@@ -211,7 +211,7 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
         <Text style={f.label}>ステータス</Text>
         <View style={f.statusRow}>
           {STATUSES.filter((st) => st.value).map((st) => (
-            <Pressable key={st.value} style={[f.statusChip, status === st.value && f.statusChipActive]} onPress={() => setStatus(st.value)}>
+            <Pressable key={st.value} style={[f.statusChip, status === st.value && f.statusChipActive]} onPress={() => setStatus(st.value as DramaStatus)}>
               <Text style={[f.statusChipText, status === st.value && f.statusChipTextActive]}>{st.label}</Text>
             </Pressable>
           ))}

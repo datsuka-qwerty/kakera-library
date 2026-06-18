@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import type { Movie, MovieCreateInput } from "@kakera/shared";
+import type { Movie, MovieCreateInput, MovieStatus } from "@kakera/shared";
 import { moviesApi } from "../../lib/api/movies";
 import { mediaTypesApi } from "../../lib/api/misc";
 import StarRating from "../ui/StarRating";
@@ -142,7 +142,7 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
         </div>
         <div>
           <label className="form-label">{t("movie.status")}</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="input">
+          <select value={status} onChange={(e) => setStatus(e.target.value as MovieStatus)} className="input">
             {STATUSES.map((s) => <option key={s} value={s}>{t(`movie.statuses.${s}`)}</option>)}
           </select>
         </div>

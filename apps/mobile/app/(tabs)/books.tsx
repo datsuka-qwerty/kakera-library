@@ -7,7 +7,7 @@ import { useFocusEffect } from "expo-router";
 import { Plus, Search, X, Camera } from "lucide-react-native";
 import { router } from "expo-router";
 import { booksApi } from "../../lib/api";
-import type { Book } from "@kakera/shared";
+import type { Book, BookStatus } from "@kakera/shared";
 import StatusBadge from "../../components/ui/StatusBadge";
 import StarRating from "../../components/ui/StarRating";
 import CoverImage from "../../components/ui/CoverImage";
@@ -155,9 +155,9 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
         title: title.trim(),
         authors: authors.split(",").map((a) => a.trim()).filter(Boolean),
         status,
-        rating: rating ?? null,
-        memo: memo.trim() || null,
-        isbn: isbn.trim() || null,
+        rating: rating ?? undefined,
+        memo: memo.trim() || undefined,
+        isbn: isbn.trim() || undefined,
       };
       if (initial) {
         await booksApi.update(initial.id, payload);
@@ -237,7 +237,7 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
             <Pressable
               key={st.value}
               style={[f.statusChip, status === st.value && f.statusChipActive]}
-              onPress={() => setStatus(st.value)}
+              onPress={() => setStatus(st.value as BookStatus)}
             >
               <Text style={[f.statusChipText, status === st.value && f.statusChipTextActive]}>{st.label}</Text>
             </Pressable>
