@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.expo/
+.expo-shared/
+
+# Go
+apps/api/bin/
+apps/api/*.exe
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Docker
+.docker/
+
+# Database backups
+backups/
+
+# iOS / Android (Expo)
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/.expo/

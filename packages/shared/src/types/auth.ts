@@ -1,0 +1,29 @@
+export interface LoginRequest {
+  username: string;
+  password: string;
+  totpCode?: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    role: string;
+  };
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+}
+
+export interface TOTPSetupResponse {
+  secret: string;
+  qrCodeUrl: string;
+}

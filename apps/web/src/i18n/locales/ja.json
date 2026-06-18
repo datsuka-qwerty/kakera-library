@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "books": "本",
+    "movies": "映画",
+    "dramas": "ドラマ",
+    "settings": "設定"
+  },
+  "login": {
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "totpCode": "認証コード",
+    "submit": "ログイン",
+    "error": "ユーザー名またはパスワードが正しくありません"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "add": "追加",
+    "search": "検索",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました"
+  },
+  "book": {
+    "title": "タイトル",
+    "seriesName": "シリーズ名",
+    "authors": "著者",
+    "isbn": "ISBN",
+    "publisher": "出版社",
+    "status": "読書ステータス",
+    "mediaTypes": "所有形態",
+    "purchasePlace": "購入場所",
+    "startedAt": "読書開始日",
+    "completedAt": "読了日",
+    "rating": "評価",
+    "memo": "メモ",
+    "statuses": {
+      "want_to_read": "読みたい",
+      "reading": "読書中",
+      "completed": "読了",
+      "on_hold": "積読"
+    }
+  },
+  "movie": {
+    "title": "タイトル",
+    "seriesName": "シリーズ名",
+    "directors": "監督",
+    "releasedAt": "公開日",
+    "watchedAt": "視聴日",
+    "status": "視聴ステータス",
+    "mediaTypes": "視聴媒体",
+    "rating": "評価",
+    "memo": "メモ",
+    "statuses": {
+      "unwatched": "未視聴",
+      "watched": "視聴済み"
+    }
+  },
+  "drama": {
+    "title": "タイトル",
+    "seriesName": "シリーズ名",
+    "totalSeasons": "シーズン数",
+    "currentSeason": "現在のシーズン",
+    "watchStartedAt": "視聴開始日",
+    "status": "視聴ステータス",
+    "mediaTypes": "視聴媒体",
+    "rating": "評価",
+    "memo": "メモ",
+    "statuses": {
+      "interested": "気になる",
+      "watching": "視聴中",
+      "completed": "完走",
+      "dropped": "途中まで"
+    }
+  }
+}

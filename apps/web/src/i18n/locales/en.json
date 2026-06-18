@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "books": "Books",
+    "movies": "Movies",
+    "dramas": "Dramas",
+    "settings": "Settings"
+  },
+  "login": {
+    "username": "Username",
+    "password": "Password",
+    "totpCode": "Authenticator Code",
+    "submit": "Login",
+    "error": "Invalid username or password"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "book": {
+    "title": "Title",
+    "seriesName": "Series Name",
+    "authors": "Authors",
+    "isbn": "ISBN",
+    "publisher": "Publisher",
+    "status": "Reading Status",
+    "mediaTypes": "Media Type",
+    "purchasePlace": "Purchase Place",
+    "startedAt": "Started Reading",
+    "completedAt": "Completed",
+    "rating": "Rating",
+    "memo": "Memo",
+    "statuses": {
+      "want_to_read": "Want to Read",
+      "reading": "Reading",
+      "completed": "Completed",
+      "on_hold": "On Hold"
+    }
+  },
+  "movie": {
+    "title": "Title",
+    "seriesName": "Series Name",
+    "directors": "Directors",
+    "releasedAt": "Release Date",
+    "watchedAt": "Watched Date",
+    "status": "Watch Status",
+    "mediaTypes": "Media",
+    "rating": "Rating",
+    "memo": "Memo",
+    "statuses": {
+      "unwatched": "Unwatched",
+      "watched": "Watched"
+    }
+  },
+  "drama": {
+    "title": "Title",
+    "seriesName": "Series Name",
+    "totalSeasons": "Total Seasons",
+    "currentSeason": "Current Season",
+    "watchStartedAt": "Started Watching",
+    "status": "Watch Status",
+    "mediaTypes": "Media",
+    "rating": "Rating",
+    "memo": "Memo",
+    "statuses": {
+      "interested": "Interested",
+      "watching": "Watching",
+      "completed": "Completed",
+      "dropped": "Dropped"
+    }
+  }
+}
