@@ -4,28 +4,65 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/kakera-library/api/internal/service"
 )
 
 func ListDashboardShares(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	shares, err := service.ListDashboardShares(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, shares)
 }
 
 func SetDashboardShare(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	ownerID := c.Get("userId").(string)
+	viewerID := c.Param("targetUserId")
+	if err := service.SetDashboardShare(c.Request().Context(), ownerID, viewerID); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 func RemoveDashboardShare(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	ownerID := c.Get("userId").(string)
+	viewerID := c.Param("targetUserId")
+	if err := service.RemoveDashboardShare(c.Request().Context(), ownerID, viewerID); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 func ListRatingShares(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	shares, err := service.ListRatingShares(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, shares)
 }
 
 func SetRatingShare(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	fromID := c.Get("userId").(string)
+	toID := c.Param("targetUserId")
+	var req struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	if err := service.SetRatingShare(c.Request().Context(), fromID, toID, req.Enabled); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 func RemoveRatingShare(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	fromID := c.Get("userId").(string)
+	toID := c.Param("targetUserId")
+	if err := service.RemoveRatingShare(c.Request().Context(), fromID, toID); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }

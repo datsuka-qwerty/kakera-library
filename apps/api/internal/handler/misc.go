@@ -1,83 +1,219 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/kakera-library/api/internal/service"
 )
 
+// Tags
+
 func ListTags(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	tags, err := service.ListTags(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, tags)
 }
 
 func CreateTag(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	var req struct {
+		Name  string  `json:"name"`
+		Color *string `json:"color"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	tag, err := service.CreateTag(c.Request().Context(), userID, req.Name, req.Color)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusCreated, tag)
 }
 
 func DeleteTag(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	service.DeleteTag(c.Request().Context(), userID, c.Param("id"))
+	return c.NoContent(http.StatusNoContent)
 }
 
+// Media types
+
 func ListMediaTypes(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	types, err := service.ListMediaTypes(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, types)
 }
 
 func CreateMediaType(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	var req struct {
+		Category string `json:"category"`
+		Name     string `json:"name"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	mt, err := service.CreateMediaType(c.Request().Context(), userID, req.Category, req.Name)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusCreated, mt)
 }
 
 func DeleteMediaType(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	service.DeleteMediaType(c.Request().Context(), userID, c.Param("id"))
+	return c.NoContent(http.StatusNoContent)
 }
 
+// Dashboard
+
 func GetDashboardStats(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	stats, err := service.GetDashboardStats(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, stats)
 }
 
 func GetUserDashboardStats(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	callerID := c.Get("userId").(string)
+	targetID := c.Param("userId")
+
+	// Verify caller has permission to view target's dashboard
+	shares, err := service.ListDashboardShares(c.Request().Context(), targetID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	allowed := false
+	for _, s := range shares {
+		if s.UserID == callerID {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return c.JSON(http.StatusForbidden, errResp("forbidden", "not allowed to view this dashboard"))
+	}
+
+	stats, err := service.GetDashboardStats(c.Request().Context(), targetID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, stats)
 }
 
+// External metadata
+
 func SearchBooks(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	q := c.QueryParam("q")
+	books, err := service.SearchBooksMeta(c.Request().Context(), q)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, books)
 }
 
 func SearchMovies(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	q := c.QueryParam("q")
+	movies, err := service.SearchMoviesMeta(c.Request().Context(), q)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, movies)
 }
 
 func SearchDramas(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	q := c.QueryParam("q")
+	dramas, err := service.SearchDramasMeta(c.Request().Context(), q)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, dramas)
 }
 
 func LookupBarcode(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	isbn := c.Param("isbn")
+	book, err := service.LookupISBN(c.Request().Context(), isbn)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, errResp("not_found", "book not found"))
+	}
+	return c.JSON(http.StatusOK, book)
 }
 
+// Backup
+
 func GetBackupConfig(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	cfg, err := service.GetBackupConfig(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, cfg)
 }
 
 func UpdateBackupConfig(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	var cfg service.BackupConfig
+	if err := c.Bind(&cfg); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	if err := service.UpdateBackupConfig(c.Request().Context(), cfg); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, cfg)
 }
 
 func ListBackups(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	files, err := service.ListBackups()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, files)
 }
 
 func RunBackup(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	filename, err := service.RunBackup(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, map[string]string{"filename": filename})
 }
 
 func RestoreBackup(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	if err := service.RestoreBackup(c.Request().Context(), c.Param("filename")); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
+// Export / Import
+
 func Export(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	data, err := service.ExportUserData(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=kakera-export.json")
+	return c.JSON(http.StatusOK, data)
 }
 
 func Import(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	var raw json.RawMessage
+	if err := c.Bind(&raw); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	if err := service.ImportUserData(c.Request().Context(), userID, raw); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }

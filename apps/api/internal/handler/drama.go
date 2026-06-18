@@ -2,26 +2,110 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/kakera-library/api/internal/service"
 )
 
 func ListDramas(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	f := service.ListFilter{Search: c.QueryParam("search"), Status: c.QueryParam("status")}
+	if r := c.QueryParam("rating"); r != "" {
+		v, _ := strconv.Atoi(r)
+		f.Rating = &v
+	}
+	f.Page, _ = strconv.Atoi(c.QueryParam("page"))
+	f.PerPage, _ = strconv.Atoi(c.QueryParam("perPage"))
+
+	result, err := service.ListDramas(c.Request().Context(), userID, f)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, result)
 }
 
 func CreateDrama(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	var req struct {
+		Title                string   `json:"title"`
+		SeriesName           *string  `json:"seriesName"`
+		TotalSeasons         *int     `json:"totalSeasons"`
+		FirstSeasonAiredAt   *string  `json:"firstSeasonAiredAt"`
+		CurrentSeasonAiredAt *string  `json:"currentSeasonAiredAt"`
+		WatchStartedAt       *string  `json:"watchStartedAt"`
+		CurrentSeason        *int     `json:"currentSeason"`
+		CoverImageURL        *string  `json:"coverImageUrl"`
+		Status               string   `json:"status"`
+		MediaTypes           []string `json:"mediaTypes"`
+		Rating               *int     `json:"rating"`
+		Tags                 []string `json:"tags"`
+		Memo                 *string  `json:"memo"`
+		TmdbID               *int     `json:"tmdbId"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	drama, err := service.CreateDrama(c.Request().Context(), userID, service.DramaInput{
+		Title: req.Title, SeriesName: req.SeriesName, TotalSeasons: req.TotalSeasons,
+		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
+		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
+		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
+		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusCreated, drama)
 }
 
 func GetDrama(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	drama, err := service.GetDrama(c.Request().Context(), userID, c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusNotFound, errResp("not_found", "drama not found"))
+	}
+	return c.JSON(http.StatusOK, drama)
 }
 
 func UpdateDrama(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	var req struct {
+		Title                string   `json:"title"`
+		SeriesName           *string  `json:"seriesName"`
+		TotalSeasons         *int     `json:"totalSeasons"`
+		FirstSeasonAiredAt   *string  `json:"firstSeasonAiredAt"`
+		CurrentSeasonAiredAt *string  `json:"currentSeasonAiredAt"`
+		WatchStartedAt       *string  `json:"watchStartedAt"`
+		CurrentSeason        *int     `json:"currentSeason"`
+		CoverImageURL        *string  `json:"coverImageUrl"`
+		Status               string   `json:"status"`
+		MediaTypes           []string `json:"mediaTypes"`
+		Rating               *int     `json:"rating"`
+		Tags                 []string `json:"tags"`
+		Memo                 *string  `json:"memo"`
+		TmdbID               *int     `json:"tmdbId"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	drama, err := service.UpdateDrama(c.Request().Context(), userID, c.Param("id"), service.DramaInput{
+		Title: req.Title, SeriesName: req.SeriesName, TotalSeasons: req.TotalSeasons,
+		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
+		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
+		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
+		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, drama)
 }
 
 func DeleteDrama(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, map[string]string{"message": "not implemented"})
+	userID := c.Get("userId").(string)
+	if err := service.DeleteDrama(c.Request().Context(), userID, c.Param("id")); err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.NoContent(http.StatusNoContent)
 }
