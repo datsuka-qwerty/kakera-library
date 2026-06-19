@@ -28,8 +28,12 @@ jobs:
 
       - name: Patch ExpoModulesCorePlugin for AGP 8.x compatibility
         run: |
-          sed -i 's/from components\.release/afterEvaluate { from components.release }/' \
-            node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          # Comment out `from components.release` which fails in AGP 8.x.
+          # Maven publishing is not needed for APK builds.
+          FILE=node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
+          sed -i 's/from components\.release/\/\/ from components.release/' "$FILE"
+          echo "--- patch result ---"
+          grep -n "components" "$FILE"
 
       - name: Build debug APK
         working-directory: apps/mobile/android
