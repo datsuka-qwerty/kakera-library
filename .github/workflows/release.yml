@@ -37,6 +37,8 @@ jobs:
 
       - name: Build debug APK
         working-directory: apps/mobile/android
+        env:
+          NODE_PATH: ${{ github.workspace }}/apps/mobile/node_modules
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
