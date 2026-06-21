@@ -1,3 +1,8 @@
+export interface SharedRating {
+  username: string;
+  rating: number;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -19,10 +24,10 @@ export interface Tag {
 
 export interface UserMediaType {
   id: string;
-  userId: string;
   category: "book" | "movie" | "drama";
   name: string;
   isDefault: boolean;
+  key?: string;
 }
 
 export interface BackupConfig {

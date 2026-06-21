@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/kakera-library/api/internal/service"
@@ -76,9 +77,19 @@ func DeleteMediaType(c echo.Context) error {
 
 // Dashboard
 
+func parseDashboardFilter(c echo.Context) service.DashboardFilter {
+	period := c.QueryParam("period")
+	if period == "" {
+		period = "all"
+	}
+	year, _ := strconv.Atoi(c.QueryParam("year"))
+	month, _ := strconv.Atoi(c.QueryParam("month"))
+	return service.DashboardFilter{Period: period, Year: year, Month: month}
+}
+
 func GetDashboardStats(c echo.Context) error {
 	userID := c.Get("userId").(string)
-	stats, err := service.GetDashboardStats(c.Request().Context(), userID)
+	stats, err := service.GetDashboardStats(c.Request().Context(), userID, parseDashboardFilter(c))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
@@ -87,10 +98,16 @@ func GetDashboardStats(c echo.Context) error {
 
 func GetUserDashboardStats(c echo.Context) error {
 	callerID := c.Get("userId").(string)
-	targetID := c.Param("userId")
+	username := c.Param("username")
 
-	// Verify caller has permission to view target's dashboard
-	shares, err := service.ListDashboardShares(c.Request().Context(), targetID)
+	// Resolve username → UUID. Return 403 (not 404) to prevent username enumeration.
+	target, err := service.GetUserByUsername(c.Request().Context(), username)
+	if err != nil {
+		return c.JSON(http.StatusForbidden, errResp("forbidden", "not allowed to view this dashboard"))
+	}
+
+	// Permission check uses UUID internally.
+	shares, err := service.ListDashboardShares(c.Request().Context(), target.ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
@@ -105,7 +122,7 @@ func GetUserDashboardStats(c echo.Context) error {
 		return c.JSON(http.StatusForbidden, errResp("forbidden", "not allowed to view this dashboard"))
 	}
 
-	stats, err := service.GetDashboardStats(c.Request().Context(), targetID)
+	stats, err := service.GetDashboardStats(c.Request().Context(), target.ID, parseDashboardFilter(c))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
@@ -208,12 +225,31 @@ func Export(c echo.Context) error {
 
 func Import(c echo.Context) error {
 	userID := c.Get("userId").(string)
+	mode := c.QueryParam("mode")
+	switch mode {
+	case "replace", "merge-skip", "merge-overwrite":
+	default:
+		mode = "merge-skip"
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", "file is required"))
+	}
+	src, err := file.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	defer src.Close()
+
 	var raw json.RawMessage
-	if err := c.Bind(&raw); err != nil {
+	if err := json.NewDecoder(src).Decode(&raw); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", "invalid JSON file"))
+	}
+
+	result, err := service.ImportUserData(c.Request().Context(), userID, raw, mode)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
 	}
-	if err := service.ImportUserData(c.Request().Context(), userID, raw); err != nil {
-		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
-	}
-	return c.NoContent(http.StatusNoContent)
+	return c.JSON(http.StatusOK, result)
 }

@@ -22,6 +22,7 @@ export interface ContentMeta {
   coverImageUrl?: string;
   releasedAt?: string;
   overview?: string;
+  genres?: string[];
 }
 
 export const moviesApi = {

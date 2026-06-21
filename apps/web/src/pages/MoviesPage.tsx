@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Plus } from "lucide-react";
+import { Plus, Share2, Layers, List, ChevronRight } from "lucide-react";
+import ShareModal from "../components/ui/ShareModal";
 import type { Movie, MovieCreateInput } from "@kakera/shared";
 import { moviesApi } from "../lib/api/movies";
 import SearchBar from "../components/ui/SearchBar";
@@ -23,11 +24,38 @@ export default function MoviesPage() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Movie | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [groupBySeries, setGroupBySeries] = useState(true);
+  const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
-    queryKey: ["movies", { search, status, page }],
-    queryFn: () => moviesApi.list({ search: search || undefined, status: status || undefined, page, perPage: 20 }),
+    queryKey: ["movies", { search, status, page: groupBySeries ? 1 : page }],
+    queryFn: () => moviesApi.list({
+      search: search || undefined,
+      status: status || undefined,
+      page: groupBySeries ? 1 : page,
+      perPage: groupBySeries ? 500 : 20,
+    }),
   });
+
+  const seriesGroups = useMemo(() => {
+    const movies = data?.data ?? [];
+    const groups = new Map<string, Movie[]>();
+    movies.forEach((m) => {
+      const key = m.seriesName ?? "__none__";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(m);
+    });
+    groups.forEach((items) => items.sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0)));
+    return groups;
+  }, [data?.data]);
+
+  const toggleSeries = (key: string) =>
+    setExpandedSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
 
   const createMutation = useMutation({
     mutationFn: moviesApi.create,
@@ -46,11 +74,28 @@ export default function MoviesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {shareOpen && <ShareModal type="rating" onClose={() => setShareOpen(false)} />}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-bold">{t("nav.movies")}</h2>
-        <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={16} /> {t("common.add")}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Share2 size={14} />
+            共有
+          </button>
+          <button
+            onClick={() => setGroupBySeries((v) => !v)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${groupBySeries ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent" : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+          >
+            {groupBySeries ? <List size={15} /> : <Layers size={15} />}
+            {groupBySeries ? "一覧表示" : "シリーズ別"}
+          </button>
+          <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2">
+            <Plus size={16} /> {t("common.add")}
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -64,40 +109,44 @@ export default function MoviesPage() {
 
       {isLoading ? (
         <p className="text-sm text-gray-400">{t("common.loading")}</p>
+      ) : groupBySeries ? (
+        <div className="space-y-2">
+          {Array.from(seriesGroups.entries()).map(([seriesKey, movies]) => {
+            if (seriesKey === "__none__") {
+              return movies.map((movie) => <MovieRow key={movie.id} movie={movie} onEdit={setEditing} onDelete={(m) => { if (confirm(`「${m.title}」を削除しますか？`)) deleteMutation.mutate(m.id); }} t={t} />);
+            }
+            const isExpanded = expandedSeries.has(seriesKey);
+            return (
+              <div key={seriesKey}>
+                <button
+                  onClick={() => toggleSeries(seriesKey)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                >
+                  <CoverImage src={movies[0]?.coverImageUrl} alt={seriesKey} className="w-8 h-11" />
+                  <ChevronRight size={14} className={`text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                  <span className="text-sm font-semibold flex-1 text-gray-800 dark:text-gray-200">{seriesKey}</span>
+                  <span className="text-xs text-gray-400">{movies.length}作品</span>
+                </button>
+                {isExpanded && (
+                  <div className="mt-1 ml-4 space-y-1">
+                    {movies.map((movie) => <MovieRow key={movie.id} movie={movie} onEdit={setEditing} onDelete={(m) => { if (confirm(`「${m.title}」を削除しますか？`)) deleteMutation.mutate(m.id); }} t={t} />)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {(data?.data ?? []).length === 0 && <p className="text-sm text-gray-400 py-8 text-center">登録された映画がありません</p>}
+        </div>
       ) : (
         <div className="space-y-2">
           {(data?.data ?? []).map((movie) => (
-            <div key={movie.id}
-              className="flex gap-4 p-4 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow">
-              <CoverImage src={movie.coverImageUrl} alt={movie.title} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-sm">{movie.title}</p>
-                    {movie.seriesName && <p className="text-xs text-gray-500">{movie.seriesName}</p>}
-                    {movie.directors.length > 0 && <p className="text-xs text-gray-400 mt-0.5">{movie.directors.join(", ")}</p>}
-                  </div>
-                  <StatusBadge status={movie.status} category="movie" />
-                </div>
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  <StarRating value={movie.rating} readonly />
-                  {movie.tags.map((tag) => <TagBadge key={tag} name={tag} />)}
-                  {movie.mediaTypes.map((m) => <span key={m} className="text-xs text-gray-400">{m}</span>)}
-                </div>
-                {movie.memo && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{movie.memo}</p>}
-              </div>
-              <div className="flex flex-col gap-1 flex-shrink-0">
-                <button onClick={() => setEditing(movie)} className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">{t("common.edit")}</button>
-                <button onClick={() => { if (confirm(`「${movie.title}」を削除しますか？`)) deleteMutation.mutate(movie.id); }}
-                  className="text-xs text-red-400 hover:text-red-600">{t("common.delete")}</button>
-              </div>
-            </div>
+            <MovieRow key={movie.id} movie={movie} onEdit={setEditing} onDelete={(m) => { if (confirm(`「${m.title}」を削除しますか？`)) deleteMutation.mutate(m.id); }} t={t} />
           ))}
-          {data?.data.length === 0 && <p className="text-sm text-gray-400 py-8 text-center">登録された映画がありません</p>}
+          {(data?.data?.length ?? 0) === 0 && <p className="text-sm text-gray-400 py-8 text-center">登録された映画がありません</p>}
         </div>
       )}
 
-      {data && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
+      {data && !groupBySeries && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="映画を追加" size="lg">
         <MovieForm onSubmit={(d) => createMutation.mutate(d)} onCancel={() => setModalOpen(false)} loading={createMutation.isPending} />
@@ -105,6 +154,44 @@ export default function MoviesPage() {
       <Modal open={!!editing} onClose={() => setEditing(null)} title="映画を編集" size="lg">
         {editing && <MovieForm initial={editing} onSubmit={(d) => updateMutation.mutate({ id: editing.id, data: d })} onCancel={() => setEditing(null)} loading={updateMutation.isPending} />}
       </Modal>
+    </div>
+  );
+}
+
+function MovieRow({ movie, onEdit, onDelete, t }: { movie: Movie; onEdit: (m: Movie) => void; onDelete: (m: Movie) => void; t: ReturnType<typeof useTranslation>["t"] }) {
+  return (
+    <div className="flex gap-4 p-4 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow">
+      <CoverImage src={movie.coverImageUrl} alt={movie.title} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-medium text-sm">{movie.title}</p>
+            {movie.seriesName && <p className="text-xs text-gray-500">{movie.seriesName}{movie.seriesOrder ? ` #${movie.seriesOrder}` : ""}</p>}
+            {movie.directors.length > 0 && <p className="text-xs text-gray-400 mt-0.5">{movie.directors.join(", ")}</p>}
+          </div>
+          <StatusBadge status={movie.status} category="movie" />
+        </div>
+        <div className="flex items-center gap-3 mt-2 flex-wrap">
+          <StarRating value={movie.rating} readonly />
+          {movie.tags.map((tag) => <TagBadge key={tag} name={tag} />)}
+          {movie.mediaTypes.map((m) => <span key={m} className="text-xs text-gray-400">{m}</span>)}
+        </div>
+        {movie.sharedRatings && movie.sharedRatings.length > 0 && (
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            {movie.sharedRatings.map((sr) => (
+              <div key={sr.username} className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400">{sr.username}</span>
+                <StarRating value={sr.rating} readonly />
+              </div>
+            ))}
+          </div>
+        )}
+        {movie.memo && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{movie.memo}</p>}
+      </div>
+      <div className="flex flex-col gap-1 flex-shrink-0">
+        <button onClick={() => onEdit(movie)} className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">{t("common.edit")}</button>
+        <button onClick={() => onDelete(movie)} className="text-xs text-red-400 hover:text-red-600">{t("common.delete")}</button>
+      </div>
     </div>
   );
 }

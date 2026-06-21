@@ -1,6 +1,9 @@
 import { apiClient } from "../apiClient";
 import type { Tag, UserMediaType, DashboardStats } from "@kakera/shared";
 
+export type CategorySummary = { added: number; updated: number; skipped: number };
+export type ImportResult = { books: CategorySummary; movies: CategorySummary; dramas: CategorySummary };
+
 export const tagsApi = {
   list: () => apiClient.get<Tag[]>("/tags").then((r) => r.data),
   create: (name: string, color?: string) =>
@@ -15,14 +18,34 @@ export const mediaTypesApi = {
   delete: (id: string) => apiClient.delete(`/media-types/${id}`),
 };
 
+export interface DashboardFilter {
+  period?: "all" | "yearly" | "monthly";
+  year?: number;
+  month?: number;
+}
+
+function filterParams(f: DashboardFilter): string {
+  const p = new URLSearchParams();
+  if (f.period) p.set("period", f.period);
+  if (f.year) p.set("year", String(f.year));
+  if (f.month) p.set("month", String(f.month));
+  const s = p.toString();
+  return s ? `?${s}` : "";
+}
+
 export const dashboardApi = {
-  getStats: () => apiClient.get<DashboardStats>("/dashboard/stats").then((r) => r.data),
-  getUserStats: (userId: string) =>
-    apiClient.get<DashboardStats>(`/dashboard/stats/${userId}`).then((r) => r.data),
+  getStats: (f: DashboardFilter = {}) =>
+    apiClient.get<DashboardStats>(`/dashboard/stats${filterParams(f)}`).then((r) => r.data),
+  getUserStats: (username: string, f: DashboardFilter = {}) =>
+    apiClient.get<DashboardStats>(`/dashboard/stats/${encodeURIComponent(username)}${filterParams(f)}`).then((r) => r.data),
 };
 
 export interface ShareTarget { userId: string; username: string }
 export interface RatingShareEntry { toUserId: string; toUsername: string; enabled: boolean }
+export interface ReceivedShares {
+  dashboardOwners: ShareTarget[];
+  ratingSharers: ShareTarget[];
+}
 
 export const sharingApi = {
   listDashboardShares: () =>
@@ -37,6 +60,8 @@ export const sharingApi = {
     apiClient.post(`/sharing/ratings/${targetUserId}`, { enabled }),
   removeRatingShare: (targetUserId: string) =>
     apiClient.delete(`/sharing/ratings/${targetUserId}`),
+  listReceivedShares: () =>
+    apiClient.get<ReceivedShares>("/sharing/received").then((r) => r.data),
 };
 
 export interface BackupConfig { enabled: boolean; intervalDays: number; maxBackups: number }
@@ -60,10 +85,14 @@ export const exportImportApi = {
     a.click();
     URL.revokeObjectURL(url);
   },
-  importData: (file: File) => {
+  importData: (file: File, mode: "merge-skip" | "merge-overwrite" | "replace") => {
     const form = new FormData();
     form.append("file", file);
-    return apiClient.post("/import", form, { headers: { "Content-Type": "multipart/form-data" } });
+    // Set Content-Type to undefined so axios doesn't override with application/json,
+    // allowing the browser to set multipart/form-data with the correct boundary.
+    return apiClient.post<ImportResult>(`/import?mode=${mode}`, form, {
+      headers: { "Content-Type": undefined },
+    });
   },
 };
 

@@ -40,10 +40,11 @@ func Login(c echo.Context) error {
 		"accessToken":  pair.AccessToken,
 		"refreshToken": pair.RefreshToken,
 		"user": map[string]any{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"role":     user.Role,
+			"id":        user.ID,
+			"username":  user.Username,
+			"email":     user.Email,
+			"role":      user.Role,
+			"avatarUrl": user.AvatarURL,
 		},
 	})
 }

@@ -4,7 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { authApi } from "../lib/api";
+import { authApi, setupApi } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function LoginScreen() {
@@ -21,6 +21,11 @@ export default function LoginScreen() {
     setLoading(true);
     setServerUrl(url.trim().replace(/\/$/, ""));
     try {
+      const { needsSetup } = await setupApi.getStatus();
+      if (needsSetup) {
+        router.replace("/setup");
+        return;
+      }
       const data = await authApi.login(username, password, needTotp ? totpCode : undefined);
       setAuth(data.accessToken, data.refreshToken, data.user);
       router.replace("/(tabs)/");

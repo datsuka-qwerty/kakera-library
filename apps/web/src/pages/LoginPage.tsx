@@ -4,8 +4,13 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { apiClient } from "../lib/apiClient";
 
+const LANGUAGES: { code: string; label: string }[] = [
+  { code: "ja", label: "日本語" },
+  { code: "en", label: "English" },
+];
+
 export default function LoginPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [username, setUsername] = useState("");
@@ -18,12 +23,17 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
+      const setupRes = await apiClient.get<{ needsSetup: boolean }>("/setup");
+      if (setupRes.data.needsSetup) {
+        navigate("/setup");
+        return;
+      }
       const res = await apiClient.post("/auth/login", {
         username,
         password,
         ...(needTotp && totpCode ? { totpCode } : {}),
       });
-      setAuth(res.data.accessToken, res.data.user);
+      setAuth(res.data.accessToken, res.data.refreshToken, res.data.user);
       navigate("/dashboard");
     } catch (err: unknown) {
       if (
@@ -85,6 +95,19 @@ export default function LoginPage() {
             {t("login.submit")}
           </button>
         </form>
+
+        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2">
+          <label className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">言語 / Language</label>
+          <select
+            value={i18n.language}
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            className="w-full px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-300"
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

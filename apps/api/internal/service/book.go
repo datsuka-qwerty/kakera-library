@@ -24,15 +24,17 @@ type Book struct {
 	CoverImageURL  *string  `json:"coverImageUrl"`
 	Status         string   `json:"status"`
 	MediaTypes     []string `json:"mediaTypes"`
+	Genres         []string `json:"genres"`
 	PurchasePlace  *string  `json:"purchasePlace"`
 	StartedAt      *string  `json:"startedAt"`
 	CompletedAt    *string  `json:"completedAt"`
 	Rating         *int     `json:"rating"`
 	Tags           []string `json:"tags"`
 	Memo           *string  `json:"memo"`
-	GoogleBooksID  *string  `json:"googleBooksId"`
-	CreatedAt      string   `json:"createdAt"`
-	UpdatedAt      string   `json:"updatedAt"`
+	GoogleBooksID  *string        `json:"googleBooksId"`
+	CreatedAt      string         `json:"createdAt"`
+	UpdatedAt      string         `json:"updatedAt"`
+	SharedRatings  []SharedRating `json:"sharedRatings"`
 }
 
 type BookListResult struct {
@@ -51,17 +53,17 @@ func ListBooks(ctx context.Context, userID string, f ListFilter) (*BookListResul
 
 	args = append(args, f.PerPage, f.offset())
 	rows, err := db.Pool.Query(ctx, fmt.Sprintf(`
-		SELECT b.id, b.user_id, b.title, b.series_name, b.series_order, b.authors,
-		       b.isbn, b.publisher, b.cover_image_url, b.status, b.media_types,
-		       b.purchase_place, b.started_at::text, b.completed_at::text,
-		       b.rating, b.memo, b.google_books_id, b.created_at::text, b.updated_at::text,
+		SELECT books.id, books.user_id, books.title, books.series_name, books.series_order, books.authors,
+		       books.isbn, books.publisher, books.cover_image_url, books.status, books.media_types,
+		       books.genres, books.purchase_place, books.started_at::text, books.completed_at::text,
+		       books.rating, books.memo, books.google_books_id, books.created_at::text, books.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
-		FROM books b
-		LEFT JOIN book_tags bt ON bt.book_id = b.id
+		FROM books
+		LEFT JOIN book_tags bt ON bt.book_id = books.id
 		LEFT JOIN tags t ON t.id = bt.tag_id
 		WHERE %s
-		GROUP BY b.id
-		ORDER BY b.created_at DESC
+		GROUP BY books.id
+		ORDER BY books.created_at DESC
 		LIMIT $%d OFFSET $%d
 	`, where, len(args)-1, len(args)), args...)
 	if err != nil {
@@ -73,6 +75,7 @@ func ListBooks(ctx context.Context, userID string, f ListFilter) (*BookListResul
 	if err != nil {
 		return nil, err
 	}
+	EnrichBooksWithSharedRatings(ctx, userID, books)
 	return &BookListResult{Data: books, Total: total, Page: f.Page, PerPage: f.PerPage}, nil
 }
 
@@ -80,7 +83,7 @@ func GetBook(ctx context.Context, userID, id string) (*Book, error) {
 	rows, err := db.Pool.Query(ctx, `
 		SELECT b.id, b.user_id, b.title, b.series_name, b.series_order, b.authors,
 		       b.isbn, b.publisher, b.cover_image_url, b.status, b.media_types,
-		       b.purchase_place, b.started_at::text, b.completed_at::text,
+		       b.genres, b.purchase_place, b.started_at::text, b.completed_at::text,
 		       b.rating, b.memo, b.google_books_id, b.created_at::text, b.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM books b
@@ -98,6 +101,7 @@ func GetBook(ctx context.Context, userID, id string) (*Book, error) {
 	if err != nil || len(books) == 0 {
 		return nil, ErrBookNotFound
 	}
+	EnrichBooksWithSharedRatings(ctx, userID, books)
 	return &books[0], nil
 }
 
@@ -111,6 +115,7 @@ type BookInput struct {
 	CoverImageURL *string
 	Status        string
 	MediaTypes    []string
+	Genres        []string
 	PurchasePlace *string
 	StartedAt     *string
 	CompletedAt   *string
@@ -124,12 +129,12 @@ func CreateBook(ctx context.Context, userID string, input BookInput) (*Book, err
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO books (id, user_id, title, series_name, series_order, authors, isbn, publisher,
-		  cover_image_url, status, media_types, purchase_place, started_at, completed_at,
+		  cover_image_url, status, media_types, genres, purchase_place, started_at, completed_at,
 		  rating, memo, google_books_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Authors,
 		input.ISBN, input.Publisher, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.PurchasePlace, input.StartedAt, input.CompletedAt, input.Rating, input.Memo, input.GoogleBooksID,
+		input.Genres, input.PurchasePlace, input.StartedAt, input.CompletedAt, input.Rating, input.Memo, input.GoogleBooksID,
 	)
 	if err != nil {
 		return nil, err
@@ -144,13 +149,13 @@ func UpdateBook(ctx context.Context, userID, id string, input BookInput) (*Book,
 	_, err := db.Pool.Exec(ctx, `
 		UPDATE books SET
 		  title=$3, series_name=$4, series_order=$5, authors=$6, isbn=$7, publisher=$8,
-		  cover_image_url=$9, status=$10, media_types=$11, purchase_place=$12,
-		  started_at=$13, completed_at=$14, rating=$15, memo=$16, google_books_id=$17,
+		  cover_image_url=$9, status=$10, media_types=$11, genres=$12, purchase_place=$13,
+		  started_at=$14, completed_at=$15, rating=$16, memo=$17, google_books_id=$18,
 		  updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Authors,
 		input.ISBN, input.Publisher, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.PurchasePlace, input.StartedAt, input.CompletedAt, input.Rating, input.Memo, input.GoogleBooksID,
+		input.Genres, input.PurchasePlace, input.StartedAt, input.CompletedAt, input.Rating, input.Memo, input.GoogleBooksID,
 	)
 	if err != nil {
 		return nil, err
@@ -183,13 +188,13 @@ func syncBookTags(ctx context.Context, userID, bookID string, tagNames []string)
 }
 
 func scanBooks(rows pgx.Rows) ([]Book, error) {
-	var books []Book
+	books := make([]Book, 0)
 	for rows.Next() {
 		var b Book
 		if err := rows.Scan(
 			&b.ID, &b.UserID, &b.Title, &b.SeriesName, &b.SeriesOrder, &b.Authors,
 			&b.ISBN, &b.Publisher, &b.CoverImageURL, &b.Status, &b.MediaTypes,
-			&b.PurchasePlace, &b.StartedAt, &b.CompletedAt,
+			&b.Genres, &b.PurchasePlace, &b.StartedAt, &b.CompletedAt,
 			&b.Rating, &b.Memo, &b.GoogleBooksID, &b.CreatedAt, &b.UpdatedAt, &b.Tags,
 		); err != nil {
 			return nil, err

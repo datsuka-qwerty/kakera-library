@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "kakera-library",
+    "slug": "kakera-library",
+    "version": "0.1.0",
+    "sdkVersion": "51.0.0",
+    "platforms": []
+  }
+}

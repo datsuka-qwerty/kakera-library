@@ -25,14 +25,14 @@ function StatCard({ icon: Icon, label, value, color }: { icon: React.ElementType
 }
 
 export default function SharedDashboardPage() {
-  const { userId } = useParams<{ userId: string }>();
+  const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const { data: stats, isLoading, isError } = useQuery({
-    queryKey: ["sharedDashboardStats", userId],
-    queryFn: () => dashboardApi.getUserStats(userId!),
-    enabled: !!userId,
+    queryKey: ["sharedDashboardStats", username],
+    queryFn: () => dashboardApi.getUserStats(username!),
+    enabled: !!username,
   });
 
   if (isLoading) return <p className="text-sm text-gray-400">{t("common.loading")}</p>;
@@ -79,10 +79,10 @@ export default function SharedDashboardPage() {
         >
           <ArrowLeft size={16} /> 戻る
         </button>
-        <h2 className="text-xl font-bold">共有ダッシュボード</h2>
+        <h2 className="text-xl font-bold">{username} のダッシュボード</h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={BookOpen} label="本（合計）" value={stats.books.total} color="bg-indigo-500" />
         <StatCard icon={Film} label="映画（合計）" value={stats.movies.total} color="bg-emerald-500" />
         <StatCard icon={Tv} label="ドラマ（合計）" value={stats.dramas.total} color="bg-amber-500" />
@@ -105,7 +105,7 @@ export default function SharedDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "本 ステータス分布", data: booksByStatus },
           { label: "映画 ステータス分布", data: moviesByStatus },

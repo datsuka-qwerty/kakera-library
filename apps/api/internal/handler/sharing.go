@@ -66,3 +66,34 @@ func RemoveRatingShare(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusNoContent)
 }
+
+func ListUsersForSharing(c echo.Context) error {
+	currentUserID := c.Get("userId").(string)
+	users, err := service.ListUsersForSharing(c.Request().Context(), currentUserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, users)
+}
+
+func ListReceivedShares(c echo.Context) error {
+	viewerID := c.Get("userId").(string)
+	dashOwners, err := service.ListReceivedDashboardShares(c.Request().Context(), viewerID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	ratingSharers, err := service.ListReceivedRatingShares(c.Request().Context(), viewerID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	if dashOwners == nil {
+		dashOwners = []service.ShareTarget{}
+	}
+	if ratingSharers == nil {
+		ratingSharers = []service.ShareTarget{}
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"dashboardOwners": dashOwners,
+		"ratingSharers":   ratingSharers,
+	})
+}

@@ -52,15 +52,16 @@ func DeleteTag(ctx context.Context, userID, id string) error {
 }
 
 type MediaType struct {
-	ID        string `json:"id"`
-	Category  string `json:"category"`
-	Name      string `json:"name"`
-	IsDefault bool   `json:"isDefault"`
+	ID        string  `json:"id"`
+	Category  string  `json:"category"`
+	Name      string  `json:"name"`
+	IsDefault bool    `json:"isDefault"`
+	Key       *string `json:"key"`
 }
 
 func ListMediaTypes(ctx context.Context, userID string) ([]MediaType, error) {
 	rows, err := db.Pool.Query(ctx,
-		`SELECT id, category, name, is_default FROM user_media_types WHERE user_id=$1 ORDER BY category, name`,
+		`SELECT id, category, name, is_default, key FROM user_media_types WHERE user_id=$1 ORDER BY category, name`,
 		userID,
 	)
 	if err != nil {
@@ -71,7 +72,7 @@ func ListMediaTypes(ctx context.Context, userID string) ([]MediaType, error) {
 	var types []MediaType
 	for rows.Next() {
 		var m MediaType
-		rows.Scan(&m.ID, &m.Category, &m.Name, &m.IsDefault)
+		rows.Scan(&m.ID, &m.Category, &m.Name, &m.IsDefault, &m.Key)
 		types = append(types, m)
 	}
 	return types, nil
@@ -89,9 +90,9 @@ func CreateMediaType(ctx context.Context, userID, category, name string) (*Media
 	}
 	var m MediaType
 	db.Pool.QueryRow(ctx,
-		`SELECT id, category, name, is_default FROM user_media_types WHERE user_id=$1 AND category=$2 AND name=$3`,
+		`SELECT id, category, name, is_default, key FROM user_media_types WHERE user_id=$1 AND category=$2 AND name=$3`,
 		userID, category, name,
-	).Scan(&m.ID, &m.Category, &m.Name, &m.IsDefault)
+	).Scan(&m.ID, &m.Category, &m.Name, &m.IsDefault, &m.Key)
 	return &m, nil
 }
 

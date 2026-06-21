@@ -25,12 +25,14 @@ type Drama struct {
 	CoverImageURL        *string  `json:"coverImageUrl"`
 	Status               string   `json:"status"`
 	MediaTypes           []string `json:"mediaTypes"`
+	Genres               []string `json:"genres"`
 	Rating               *int     `json:"rating"`
 	Tags                 []string `json:"tags"`
 	Memo                 *string  `json:"memo"`
-	TmdbID               *int     `json:"tmdbId"`
-	CreatedAt            string   `json:"createdAt"`
-	UpdatedAt            string   `json:"updatedAt"`
+	TmdbID               *int           `json:"tmdbId"`
+	CreatedAt            string         `json:"createdAt"`
+	UpdatedAt            string         `json:"updatedAt"`
+	SharedRatings        []SharedRating `json:"sharedRatings"`
 }
 
 type DramaListResult struct {
@@ -51,6 +53,7 @@ type DramaInput struct {
 	CoverImageURL        *string
 	Status               string
 	MediaTypes           []string
+	Genres               []string
 	Rating               *int
 	Tags                 []string
 	Memo                 *string
@@ -66,18 +69,18 @@ func ListDramas(ctx context.Context, userID string, f ListFilter) (*DramaListRes
 
 	args = append(args, f.PerPage, f.offset())
 	rows, err := db.Pool.Query(ctx, fmt.Sprintf(`
-		SELECT d.id, d.user_id, d.title, d.series_name, d.total_seasons,
-		       d.first_season_aired_at::text, d.current_season_aired_at::text,
-		       d.watch_started_at::text, d.current_season, d.cover_image_url,
-		       d.status, d.media_types, d.rating, d.memo, d.tmdb_id,
-		       d.created_at::text, d.updated_at::text,
+		SELECT dramas.id, dramas.user_id, dramas.title, dramas.series_name, dramas.total_seasons,
+		       dramas.first_season_aired_at::text, dramas.current_season_aired_at::text,
+		       dramas.watch_started_at::text, dramas.current_season, dramas.cover_image_url,
+		       dramas.status, dramas.media_types, dramas.genres, dramas.rating, dramas.memo, dramas.tmdb_id,
+		       dramas.created_at::text, dramas.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
-		FROM dramas d
-		LEFT JOIN drama_tags dt ON dt.drama_id = d.id
+		FROM dramas
+		LEFT JOIN drama_tags dt ON dt.drama_id = dramas.id
 		LEFT JOIN tags t ON t.id = dt.tag_id
 		WHERE %s
-		GROUP BY d.id
-		ORDER BY d.created_at DESC
+		GROUP BY dramas.id
+		ORDER BY dramas.created_at DESC
 		LIMIT $%d OFFSET $%d
 	`, where, len(args)-1, len(args)), args...)
 	if err != nil {
@@ -89,6 +92,7 @@ func ListDramas(ctx context.Context, userID string, f ListFilter) (*DramaListRes
 	if err != nil {
 		return nil, err
 	}
+	EnrichDramasWithSharedRatings(ctx, userID, dramas)
 	return &DramaListResult{Data: dramas, Total: total, Page: f.Page, PerPage: f.PerPage}, nil
 }
 
@@ -97,7 +101,7 @@ func GetDrama(ctx context.Context, userID, id string) (*Drama, error) {
 		SELECT d.id, d.user_id, d.title, d.series_name, d.total_seasons,
 		       d.first_season_aired_at::text, d.current_season_aired_at::text,
 		       d.watch_started_at::text, d.current_season, d.cover_image_url,
-		       d.status, d.media_types, d.rating, d.memo, d.tmdb_id,
+		       d.status, d.media_types, d.genres, d.rating, d.memo, d.tmdb_id,
 		       d.created_at::text, d.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM dramas d
@@ -115,6 +119,7 @@ func GetDrama(ctx context.Context, userID, id string) (*Drama, error) {
 	if err != nil || len(dramas) == 0 {
 		return nil, ErrDramaNotFound
 	}
+	EnrichDramasWithSharedRatings(ctx, userID, dramas)
 	return &dramas[0], nil
 }
 
@@ -123,12 +128,12 @@ func CreateDrama(ctx context.Context, userID string, input DramaInput) (*Drama, 
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO dramas (id, user_id, title, series_name, total_seasons,
 		  first_season_aired_at, current_season_aired_at, watch_started_at,
-		  current_season, cover_image_url, status, media_types, rating, memo, tmdb_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		  current_season, cover_image_url, status, media_types, genres, rating, memo, tmdb_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -143,12 +148,12 @@ func UpdateDrama(ctx context.Context, userID, id string, input DramaInput) (*Dra
 		  title=$3, series_name=$4, total_seasons=$5,
 		  first_season_aired_at=$6, current_season_aired_at=$7, watch_started_at=$8,
 		  current_season=$9, cover_image_url=$10, status=$11, media_types=$12,
-		  rating=$13, memo=$14, tmdb_id=$15, updated_at=NOW()
+		  genres=$13, rating=$14, memo=$15, tmdb_id=$16, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -176,14 +181,14 @@ func syncDramaTags(ctx context.Context, userID, dramaID string, tagNames []strin
 }
 
 func scanDramas(rows pgx.Rows) ([]Drama, error) {
-	var dramas []Drama
+	dramas := make([]Drama, 0)
 	for rows.Next() {
 		var d Drama
 		if err := rows.Scan(
 			&d.ID, &d.UserID, &d.Title, &d.SeriesName, &d.TotalSeasons,
 			&d.FirstSeasonAiredAt, &d.CurrentSeasonAiredAt,
 			&d.WatchStartedAt, &d.CurrentSeason, &d.CoverImageURL,
-			&d.Status, &d.MediaTypes, &d.Rating, &d.Memo, &d.TmdbID,
+			&d.Status, &d.MediaTypes, &d.Genres, &d.Rating, &d.Memo, &d.TmdbID,
 			&d.CreatedAt, &d.UpdatedAt, &d.Tags,
 		); err != nil {
 			return nil, err

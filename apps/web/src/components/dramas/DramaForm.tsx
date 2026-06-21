@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import type { Drama, DramaCreateInput, DramaStatus } from "@kakera/shared";
 import { dramasApi } from "../../lib/api/dramas";
 import { mediaTypesApi } from "../../lib/api/misc";
+import { getMediaTypeName } from "../../lib/mediaTypeLabels";
 import StarRating from "../ui/StarRating";
 import TagBadge from "../ui/TagBadge";
 
@@ -18,7 +19,7 @@ interface Props {
 const STATUSES = ["interested", "watching", "completed", "dropped"] as const;
 
 export default function DramaForm({ initial, onSubmit, onCancel, loading }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
   const [totalSeasons, setTotalSeasons] = useState(initial?.totalSeasons?.toString() ?? "");
@@ -34,6 +35,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
   const [tagInput, setTagInput] = useState("");
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
+  const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof dramasApi.searchMeta>>>([]);
 
@@ -51,6 +53,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     if (meta.releasedAt) setFirstSeasonAiredAt(meta.releasedAt);
     setTmdbId(meta.tmdbId.toString());
+    if (meta.genres?.length) setGenres(meta.genres);
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -76,6 +79,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
       coverImageUrl: coverImageUrl || undefined,
       status: status as DramaCreateInput["status"],
       mediaTypes,
+      genres,
       rating,
       tags,
       memo: memo || undefined,
@@ -160,13 +164,25 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
           {dramaMediaTypes.map((m) => (
             <label key={m.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
               <input type="checkbox" checked={mediaTypes.includes(m.name)}
-                onChange={(e) => setMediaTypes(e.target.checked ? [...mediaTypes, m.name] : mediaTypes.filter((x) => x !== m.name))}
-                className="rounded" />
-              {m.name}
+                onChange={(e) => setMediaTypes(e.target.checked ? [...mediaTypes, m.name] : mediaTypes.filter((x) => x !== m.name))} />
+              {getMediaTypeName(m, i18n.language)}
             </label>
           ))}
         </div>
       </div>
+
+      {genres.length > 0 && (
+        <div>
+          <label className="form-label">ジャンル</label>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {genres.map((g) => (
+              <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="form-label">{t("drama.rating")}</label>

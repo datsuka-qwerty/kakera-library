@@ -25,7 +25,7 @@ type User struct {
 
 func ListUsers(ctx context.Context) ([]User, error) {
 	rows, err := db.Pool.Query(ctx,
-		`SELECT id, username, email, role, avatar_url, totp_enabled, created_at, updated_at FROM users ORDER BY created_at`,
+		`SELECT id::text, username, email, role, avatar_url, totp_enabled, created_at::text, updated_at::text FROM users ORDER BY created_at`,
 	)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,18 @@ func ListUsers(ctx context.Context) ([]User, error) {
 func GetUser(ctx context.Context, id string) (*User, error) {
 	var u User
 	err := db.Pool.QueryRow(ctx,
-		`SELECT id, username, email, role, avatar_url, totp_enabled, created_at, updated_at FROM users WHERE id = $1`, id,
+		`SELECT id::text, username, email, role, avatar_url, totp_enabled, created_at::text, updated_at::text FROM users WHERE id = $1`, id,
+	).Scan(&u.ID, &u.Username, &u.Email, &u.Role, &u.AvatarURL, &u.TOTPEnabled, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+	return &u, nil
+}
+
+func GetUserByUsername(ctx context.Context, username string) (*User, error) {
+	var u User
+	err := db.Pool.QueryRow(ctx,
+		`SELECT id::text, username, email, role, avatar_url, totp_enabled, created_at::text, updated_at::text FROM users WHERE username = $1`, username,
 	).Scan(&u.ID, &u.Username, &u.Email, &u.Role, &u.AvatarURL, &u.TOTPEnabled, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, ErrUserNotFound
@@ -88,18 +99,35 @@ func CreateUser(ctx context.Context, input CreateUserInput) (*User, error) {
 var defaultMediaTypes = []struct {
 	category string
 	name     string
+	key      string
 }{
-	{"book", "紙媒体"}, {"book", "電子書籍"}, {"book", "図書館"}, {"book", "貸出中"}, {"book", "手放した"},
-	{"movie", "Netflix"}, {"movie", "Amazon Prime"}, {"movie", "FOD"}, {"movie", "U-Next"}, {"movie", "映画館"},
-	{"drama", "Netflix"}, {"drama", "Amazon Prime"}, {"drama", "FOD"}, {"drama", "U-Next"}, {"drama", "テレビ"},
+	{"book", "紙媒体", "paper_book"},
+	{"book", "電子書籍", "ebook"},
+	{"book", "図書館", "library"},
+	{"book", "貸出中", "borrowed"},
+	{"book", "手放した", "sold"},
+	{"movie", "Netflix", ""},
+	{"movie", "Amazon Prime", ""},
+	{"movie", "FOD", ""},
+	{"movie", "U-Next", ""},
+	{"movie", "映画館", "theater"},
+	{"drama", "Netflix", ""},
+	{"drama", "Amazon Prime", ""},
+	{"drama", "FOD", ""},
+	{"drama", "U-Next", ""},
+	{"drama", "テレビ", "tv"},
 }
 
 func seedDefaultMediaTypes(ctx context.Context, userID string) {
 	for _, m := range defaultMediaTypes {
+		var keyVal interface{}
+		if m.key != "" {
+			keyVal = m.key
+		}
 		db.Pool.Exec(ctx,
-			`INSERT INTO user_media_types (id, user_id, category, name, is_default) VALUES ($1,$2,$3,$4,TRUE)
+			`INSERT INTO user_media_types (id, user_id, category, name, is_default, key) VALUES ($1,$2,$3,$4,TRUE,$5)
 			 ON CONFLICT (user_id, category, name) DO NOTHING`,
-			uuid.New().String(), userID, m.category, m.name,
+			uuid.New().String(), userID, m.category, m.name, keyVal,
 		)
 	}
 }

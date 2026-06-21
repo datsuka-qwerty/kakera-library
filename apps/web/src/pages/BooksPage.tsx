@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Plus, Layers, List } from "lucide-react";
+import { Plus, Layers, List, Share2, ChevronRight } from "lucide-react";
+import ShareModal from "../components/ui/ShareModal";
 import type { Book, BookCreateInput } from "@kakera/shared";
 import { booksApi } from "../lib/api/books";
 import SearchBar from "../components/ui/SearchBar";
@@ -23,11 +24,18 @@ export default function BooksPage() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
-  const [groupBySeries, setGroupBySeries] = useState(false);
+  const [groupBySeries, setGroupBySeries] = useState(true);
+  const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["books", { search, status, page }],
-    queryFn: () => booksApi.list({ search: search || undefined, status: status || undefined, page, perPage: 20 }),
+    queryKey: ["books", { search, status, page: groupBySeries ? 1 : page }],
+    queryFn: () => booksApi.list({
+      search: search || undefined,
+      status: status || undefined,
+      page: groupBySeries ? 1 : page,
+      perPage: groupBySeries ? 500 : 20,
+    }),
   });
 
   const createMutation = useMutation({
@@ -45,6 +53,13 @@ export default function BooksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["books"] }),
   });
 
+  const toggleSeries = (key: string) =>
+    setExpandedSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+
   const handleCreate = (data: BookCreateInput) => createMutation.mutate(data);
   const handleUpdate = (data: BookCreateInput) => {
     if (editing) updateMutation.mutate({ id: editing.id, data });
@@ -57,6 +72,7 @@ export default function BooksPage() {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(b);
     });
+    groups.forEach((items) => items.sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0)));
     return groups;
   }, [data?.data]);
 
@@ -66,9 +82,17 @@ export default function BooksPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {shareOpen && <ShareModal type="rating" onClose={() => setShareOpen(false)} />}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-bold">{t("nav.books")}</h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShareOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Share2 size={14} />
+            共有
+          </button>
           <button
             onClick={() => setGroupBySeries((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${groupBySeries ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent" : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
@@ -101,22 +125,35 @@ export default function BooksPage() {
       {isLoading ? (
         <p className="text-sm text-gray-400">{t("common.loading")}</p>
       ) : groupBySeries ? (
-        <div className="space-y-4">
-          {Array.from(seriesGroups.entries()).map(([seriesKey, books]) => (
-            <div key={seriesKey}>
-              {seriesKey !== "__none__" && (
-                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
-                  <Layers size={14} /> {seriesKey}
-                  <span className="text-xs font-normal text-gray-400">({books.length}冊)</span>
-                </h3>
-              )}
-              <div className="space-y-2">
-                {books.sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0)).map((book) => (
-                  <BookRow key={book.id} book={book} onEdit={setEditing} onDelete={handleDelete} t={t} />
-                ))}
+        <div className="space-y-2">
+          {Array.from(seriesGroups.entries()).map(([seriesKey, books]) => {
+            if (seriesKey === "__none__") {
+              return books.sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0)).map((book) => (
+                <BookRow key={book.id} book={book} onEdit={setEditing} onDelete={handleDelete} t={t} />
+              ));
+            }
+            const isExpanded = expandedSeries.has(seriesKey);
+            return (
+              <div key={seriesKey}>
+                <button
+                  onClick={() => toggleSeries(seriesKey)}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+                >
+                  <CoverImage src={books[0]?.coverImageUrl} alt={seriesKey} className="w-8 h-11" />
+                  <ChevronRight size={14} className={`text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                  <span className="text-sm font-semibold flex-1 text-gray-800 dark:text-gray-200">{seriesKey}</span>
+                  <span className="text-xs text-gray-400">{books.length}冊</span>
+                </button>
+                {isExpanded && (
+                  <div className="mt-1 ml-4 space-y-1">
+                    {books.map((book) => (
+                      <BookRow key={book.id} book={book} onEdit={setEditing} onDelete={handleDelete} t={t} />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           {(data?.data ?? []).length === 0 && (
             <p className="text-sm text-gray-400 py-8 text-center">登録された本がありません</p>
           )}
@@ -126,13 +163,13 @@ export default function BooksPage() {
           {(data?.data ?? []).map((book) => (
             <BookRow key={book.id} book={book} onEdit={setEditing} onDelete={handleDelete} t={t} />
           ))}
-          {data?.data.length === 0 && (
+          {(data?.data?.length ?? 0) === 0 && (
             <p className="text-sm text-gray-400 py-8 text-center">登録された本がありません</p>
           )}
         </div>
       )}
 
-      {data && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
+      {data && !groupBySeries && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
 
       {/* Create modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="本を追加" size="lg">
@@ -182,6 +219,16 @@ function BookRow({ book, onEdit, onDelete, t }: { book: Book; onEdit: (b: Book) 
             <span key={m} className="text-xs text-gray-400">{m}</span>
           ))}
         </div>
+        {book.sharedRatings && book.sharedRatings.length > 0 && (
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            {book.sharedRatings.map((sr) => (
+              <div key={sr.username} className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400">{sr.username}</span>
+                <StarRating value={sr.rating} readonly />
+              </div>
+            ))}
+          </div>
+        )}
         {book.memo && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{book.memo}</p>}
       </div>
       <div className="flex flex-col gap-1 flex-shrink-0">

@@ -24,12 +24,14 @@ type Movie struct {
 	CoverImageURL *string  `json:"coverImageUrl"`
 	Status        string   `json:"status"`
 	MediaTypes    []string `json:"mediaTypes"`
+	Genres        []string `json:"genres"`
 	Rating        *int     `json:"rating"`
 	Tags          []string `json:"tags"`
 	Memo          *string  `json:"memo"`
-	TmdbID        *int     `json:"tmdbId"`
-	CreatedAt     string   `json:"createdAt"`
-	UpdatedAt     string   `json:"updatedAt"`
+	TmdbID        *int           `json:"tmdbId"`
+	CreatedAt     string         `json:"createdAt"`
+	UpdatedAt     string         `json:"updatedAt"`
+	SharedRatings []SharedRating `json:"sharedRatings"`
 }
 
 type MovieListResult struct {
@@ -49,6 +51,7 @@ type MovieInput struct {
 	CoverImageURL *string
 	Status        string
 	MediaTypes    []string
+	Genres        []string
 	Rating        *int
 	Tags          []string
 	Memo          *string
@@ -64,16 +67,16 @@ func ListMovies(ctx context.Context, userID string, f ListFilter) (*MovieListRes
 
 	args = append(args, f.PerPage, f.offset())
 	rows, err := db.Pool.Query(ctx, fmt.Sprintf(`
-		SELECT m.id, m.user_id, m.title, m.series_name, m.series_order, m.directors,
-		       m.released_at::text, m.watched_at::text, m.cover_image_url, m.status,
-		       m.media_types, m.rating, m.memo, m.tmdb_id, m.created_at::text, m.updated_at::text,
+		SELECT movies.id, movies.user_id, movies.title, movies.series_name, movies.series_order, movies.directors,
+		       movies.released_at::text, movies.watched_at::text, movies.cover_image_url, movies.status,
+		       movies.media_types, movies.genres, movies.rating, movies.memo, movies.tmdb_id, movies.created_at::text, movies.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
-		FROM movies m
-		LEFT JOIN movie_tags mt ON mt.movie_id = m.id
+		FROM movies
+		LEFT JOIN movie_tags mt ON mt.movie_id = movies.id
 		LEFT JOIN tags t ON t.id = mt.tag_id
 		WHERE %s
-		GROUP BY m.id
-		ORDER BY m.created_at DESC
+		GROUP BY movies.id
+		ORDER BY movies.created_at DESC
 		LIMIT $%d OFFSET $%d
 	`, where, len(args)-1, len(args)), args...)
 	if err != nil {
@@ -85,6 +88,7 @@ func ListMovies(ctx context.Context, userID string, f ListFilter) (*MovieListRes
 	if err != nil {
 		return nil, err
 	}
+	EnrichMoviesWithSharedRatings(ctx, userID, movies)
 	return &MovieListResult{Data: movies, Total: total, Page: f.Page, PerPage: f.PerPage}, nil
 }
 
@@ -92,7 +96,7 @@ func GetMovie(ctx context.Context, userID, id string) (*Movie, error) {
 	rows, err := db.Pool.Query(ctx, `
 		SELECT m.id, m.user_id, m.title, m.series_name, m.series_order, m.directors,
 		       m.released_at::text, m.watched_at::text, m.cover_image_url, m.status,
-		       m.media_types, m.rating, m.memo, m.tmdb_id, m.created_at::text, m.updated_at::text,
+		       m.media_types, m.genres, m.rating, m.memo, m.tmdb_id, m.created_at::text, m.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM movies m
 		LEFT JOIN movie_tags mt ON mt.movie_id = m.id
@@ -109,6 +113,7 @@ func GetMovie(ctx context.Context, userID, id string) (*Movie, error) {
 	if err != nil || len(movies) == 0 {
 		return nil, ErrMovieNotFound
 	}
+	EnrichMoviesWithSharedRatings(ctx, userID, movies)
 	return &movies[0], nil
 }
 
@@ -116,11 +121,11 @@ func CreateMovie(ctx context.Context, userID string, input MovieInput) (*Movie, 
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO movies (id, user_id, title, series_name, series_order, directors,
-		  released_at, watched_at, cover_image_url, status, media_types, rating, memo, tmdb_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		  released_at, watched_at, cover_image_url, status, media_types, genres, rating, memo, tmdb_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors,
 		input.ReleasedAt, input.WatchedAt, input.CoverImageURL, input.Status,
-		input.MediaTypes, input.Rating, input.Memo, input.TmdbID,
+		input.MediaTypes, input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -134,11 +139,11 @@ func UpdateMovie(ctx context.Context, userID, id string, input MovieInput) (*Mov
 		UPDATE movies SET
 		  title=$3, series_name=$4, series_order=$5, directors=$6,
 		  released_at=$7, watched_at=$8, cover_image_url=$9, status=$10,
-		  media_types=$11, rating=$12, memo=$13, tmdb_id=$14, updated_at=NOW()
+		  media_types=$11, genres=$12, rating=$13, memo=$14, tmdb_id=$15, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors,
 		input.ReleasedAt, input.WatchedAt, input.CoverImageURL, input.Status,
-		input.MediaTypes, input.Rating, input.Memo, input.TmdbID,
+		input.MediaTypes, input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -166,13 +171,13 @@ func syncMovieTags(ctx context.Context, userID, movieID string, tagNames []strin
 }
 
 func scanMovies(rows pgx.Rows) ([]Movie, error) {
-	var movies []Movie
+	movies := make([]Movie, 0)
 	for rows.Next() {
 		var m Movie
 		if err := rows.Scan(
 			&m.ID, &m.UserID, &m.Title, &m.SeriesName, &m.SeriesOrder, &m.Directors,
 			&m.ReleasedAt, &m.WatchedAt, &m.CoverImageURL, &m.Status,
-			&m.MediaTypes, &m.Rating, &m.Memo, &m.TmdbID, &m.CreatedAt, &m.UpdatedAt, &m.Tags,
+			&m.MediaTypes, &m.Genres, &m.Rating, &m.Memo, &m.TmdbID, &m.CreatedAt, &m.UpdatedAt, &m.Tags,
 		); err != nil {
 			return nil, err
 		}

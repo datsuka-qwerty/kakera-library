@@ -37,6 +37,7 @@ func CreateMovie(c echo.Context) error {
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
+		Genres        []string `json:"genres"`
 		Rating        *int     `json:"rating"`
 		Tags          []string `json:"tags"`
 		Memo          *string  `json:"memo"`
@@ -49,7 +50,7 @@ func CreateMovie(c echo.Context) error {
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
 		Directors: req.Directors, ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
@@ -78,6 +79,7 @@ func UpdateMovie(c echo.Context) error {
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
+		Genres        []string `json:"genres"`
 		Rating        *int     `json:"rating"`
 		Tags          []string `json:"tags"`
 		Memo          *string  `json:"memo"`
@@ -90,7 +92,7 @@ func UpdateMovie(c echo.Context) error {
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
 		Directors: req.Directors, ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))

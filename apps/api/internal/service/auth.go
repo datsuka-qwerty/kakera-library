@@ -34,6 +34,7 @@ type UserRecord struct {
 	Username     string
 	Email        string
 	Role         string
+	AvatarURL    *string
 	TOTPEnabled  bool
 	TOTPSecret   *string
 	PasswordHash string
@@ -42,9 +43,9 @@ type UserRecord struct {
 func Login(ctx context.Context, username, password, totpCode string) (*TokenPair, *UserRecord, error) {
 	var u UserRecord
 	err := db.Pool.QueryRow(ctx,
-		`SELECT id, username, email, role, password_hash, totp_enabled, totp_secret
+		`SELECT id, username, email, role, avatar_url, password_hash, totp_enabled, totp_secret
 		 FROM users WHERE username = $1`, username,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.Role, &u.PasswordHash, &u.TOTPEnabled, &u.TOTPSecret)
+	).Scan(&u.ID, &u.Username, &u.Email, &u.Role, &u.AvatarURL, &u.PasswordHash, &u.TOTPEnabled, &u.TOTPSecret)
 	if err != nil {
 		return nil, nil, ErrInvalidCredentials
 	}

@@ -24,6 +24,7 @@ export interface BookMeta {
   isbn?: string;
   coverImageUrl?: string;
   description?: string;
+  genres?: string[];
 }
 
 export const booksApi = {

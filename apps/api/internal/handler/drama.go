@@ -38,6 +38,7 @@ func CreateDrama(c echo.Context) error {
 		CoverImageURL        *string  `json:"coverImageUrl"`
 		Status               string   `json:"status"`
 		MediaTypes           []string `json:"mediaTypes"`
+		Genres               []string `json:"genres"`
 		Rating               *int     `json:"rating"`
 		Tags                 []string `json:"tags"`
 		Memo                 *string  `json:"memo"`
@@ -51,7 +52,7 @@ func CreateDrama(c echo.Context) error {
 		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
 		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
@@ -81,6 +82,7 @@ func UpdateDrama(c echo.Context) error {
 		CoverImageURL        *string  `json:"coverImageUrl"`
 		Status               string   `json:"status"`
 		MediaTypes           []string `json:"mediaTypes"`
+		Genres               []string `json:"genres"`
 		Rating               *int     `json:"rating"`
 		Tags                 []string `json:"tags"`
 		Memo                 *string  `json:"memo"`
@@ -94,7 +96,7 @@ func UpdateDrama(c echo.Context) error {
 		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
 		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))

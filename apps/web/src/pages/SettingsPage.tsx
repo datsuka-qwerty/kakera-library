@@ -2,8 +2,11 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Camera } from "lucide-react";
 import { authApi } from "../lib/api/auth";
 import { mediaTypesApi, sharingApi, backupApi, usersApi, exportImportApi } from "../lib/api/misc";
+import type { ImportResult } from "../lib/api/misc";
+import { getMediaTypeName } from "../lib/mediaTypeLabels";
 import { useAuthStore } from "../store/authStore";
 import Modal from "../components/ui/Modal";
 import clsx from "clsx";
@@ -12,11 +15,15 @@ type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "data" | "backup"
 
 const CATEGORIES = ["book", "movie", "drama"] as const;
 const CATEGORY_LABELS = { book: "本", movie: "映画", drama: "ドラマ" };
+const LANGUAGES: { code: string; label: string; sublabel: string }[] = [
+  { code: "ja", label: "日本語", sublabel: "Japanese" },
+  { code: "en", label: "English", sublabel: "英語" },
+];
 
 export default function SettingsPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { user, clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
   const [tab, setTab] = useState<Tab>("profile");
 
   const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
@@ -53,7 +60,7 @@ export default function SettingsPage() {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          {tab === "profile" && <ProfileTab user={user} clearAuth={clearAuth} />}
+          {tab === "profile" && <ProfileTab user={user} />}
           {tab === "security" && <SecurityTab />}
           {tab === "sharing" && <SharingTab />}
           {tab === "mediaTypes" && <MediaTypesTab qc={qc} />}
@@ -66,17 +73,96 @@ export default function SettingsPage() {
   );
 }
 
-function ProfileTab({ user, clearAuth }: { user: { id: string; username: string; email: string; role: string } | null; clearAuth: () => void }) {
+function ProfileTab({ user }: { user: { id: string; username: string; email: string; role: string } | null }) {
+  const { updateUser } = useAuthStore();
+  const { i18n } = useTranslation();
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const avatarUrl = useAuthStore((s) => s.user?.avatarUrl);
+
   const updateMutation = useMutation({
     mutationFn: () => usersApi.update(user!.id, { email: email || undefined, password: password || undefined }),
     onSuccess: () => { setPassword(""); alert("保存しました"); },
   });
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setAvatarUploading(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const size = 128;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        try {
+          await usersApi.update(user.id, { avatarUrl: dataUrl });
+          updateUser({ avatarUrl: dataUrl });
+        } catch { alert("アップロードに失敗しました"); }
+        finally { setAvatarUploading(false); }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   return (
-    <div className="space-y-4 max-w-sm">
+    <div className="space-y-5 max-w-sm">
       <h3 className="font-semibold">プロフィール</h3>
+
+      {/* アバター */}
+      <div>
+        <label className="form-label">アイコン画像</label>
+        <div className="flex items-center gap-4 mt-1">
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-gray-500 dark:text-gray-300 select-none">
+                  {user?.username?.[0]?.toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center pointer-events-none transition-opacity">
+              <Camera size={20} className="text-white" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={avatarUploading}
+              className="btn-secondary text-sm"
+            >
+              {avatarUploading ? "アップロード中..." : "画像を変更"}
+            </button>
+            {avatarUrl && (
+              <button
+                onClick={async () => {
+                  await usersApi.update(user!.id, { avatarUrl: "" });
+                  updateUser({ avatarUrl: null });
+                }}
+                className="block text-xs text-red-400 hover:text-red-600"
+              >
+                削除
+              </button>
+            )}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+        </div>
+      </div>
+
       <div>
         <label className="form-label">ユーザー名</label>
         <input value={user?.username ?? ""} disabled className="input opacity-60" />
@@ -89,12 +175,49 @@ function ProfileTab({ user, clearAuth }: { user: { id: string; username: string;
         <label className="form-label">新しいパスワード（変更する場合のみ）</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" />
       </div>
-      <div className="flex gap-2">
-        <button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="btn-primary">
-          保存
+      <button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="btn-primary">
+        保存
+      </button>
+
+      <hr className="border-gray-200 dark:border-gray-700" />
+
+      <LanguageSection i18n={i18n} />
+    </div>
+  );
+}
+
+function LanguageSection({ i18n }: { i18n: ReturnType<typeof useTranslation>["i18n"] }) {
+  const [selected, setSelected] = useState(i18n.language);
+  const [saved, setSaved] = useState(false);
+
+  const apply = () => {
+    i18n.changeLanguage(selected);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div>
+      <h4 className="text-sm font-semibold mb-3">言語 / Language</h4>
+      <div className="flex gap-2 items-center">
+        <select
+          value={selected}
+          onChange={(e) => { setSelected(e.target.value); setSaved(false); }}
+          className="input flex-1 text-sm"
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>{l.label} ({l.sublabel})</option>
+          ))}
+        </select>
+        <button
+          onClick={apply}
+          disabled={selected === i18n.language}
+          className="btn-primary text-sm px-4 disabled:opacity-40"
+        >
+          適用
         </button>
-        <button onClick={clearAuth} className="btn-danger">ログアウト</button>
       </div>
+      {saved && <p className="text-xs text-green-600 dark:text-green-400 mt-2">言語を変更しました</p>}
     </div>
   );
 }
@@ -155,77 +278,121 @@ function SecurityTab() {
 
 function SharingTab() {
   const qc = useQueryClient();
-  const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { data: allUsers } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
   const { data: dashShares } = useQuery({ queryKey: ["dashboardShares"], queryFn: sharingApi.listDashboardShares });
   const { data: ratingShares } = useQuery({ queryKey: ["ratingShares"], queryFn: sharingApi.listRatingShares });
+  const { data: received } = useQuery({ queryKey: ["receivedShares"], queryFn: sharingApi.listReceivedShares });
 
-  const others = allUsers?.filter((u) => u.id !== user?.id) ?? [];
-
-  const toggleDashShare = async (targetId: string, enabled: boolean) => {
-    if (enabled) await sharingApi.setDashboardShare(targetId);
-    else await sharingApi.removeDashboardShare(targetId);
-    qc.invalidateQueries({ queryKey: ["dashboardShares"] });
-  };
-
-  const toggleRatingShare = async (targetId: string, enabled: boolean) => {
-    await sharingApi.setRatingShare(targetId, enabled);
-    qc.invalidateQueries({ queryKey: ["ratingShares"] });
-  };
+  const activeDashShares = dashShares ?? [];
+  const activeRatingShares = ratingShares?.filter((s) => s.enabled) ?? [];
+  const receivedDash = received?.dashboardOwners ?? [];
+  const receivedRating = received?.ratingSharers ?? [];
 
   return (
-    <div className="space-y-6 max-w-md">
-      <div>
-        <h3 className="font-semibold mb-1">ダッシュボード共有</h3>
-        <p className="text-xs text-gray-400 mb-3">ONにしたユーザーはあなたのダッシュボードを閲覧できます</p>
-        <div className="space-y-2">
-          {others.map((u) => {
-            const shared = dashShares?.some((s) => s.userId === u.id) ?? false;
-            return (
-              <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={shared} onChange={(e) => toggleDashShare(u.id, e.target.checked)} className="w-4 h-4" />
-                    {u.username}
-                  </label>
-                </div>
-                <button
-                  onClick={() => navigate(`/dashboard/shared/${u.id}`)}
-                  className="text-xs text-blue-500 hover:underline"
-                >
-                  ダッシュボードを見る →
-                </button>
-              </div>
-            );
-          })}
-          {others.length === 0 && <p className="text-sm text-gray-400">他のユーザーがいません</p>}
-        </div>
-      </div>
+    <div className="space-y-8 max-w-md">
+      {/* あなたが共有しているユーザー */}
+      <section className="space-y-5">
+        <h3 className="font-semibold">あなたが共有しているユーザー</h3>
 
-      <div>
-        <h3 className="font-semibold mb-1">評価の共有</h3>
-        <p className="text-xs text-gray-400 mb-3">ONにしたユーザーはあなたの評価を閲覧できます（一方向）</p>
-        <div className="space-y-2">
-          {others.map((u) => {
-            const share = ratingShares?.find((s) => s.toUserId === u.id);
-            const enabled = share?.enabled ?? false;
-            return (
-              <label key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
-                <span className="text-sm">{u.username}</span>
-                <input type="checkbox" checked={enabled} onChange={(e) => toggleRatingShare(u.id, e.target.checked)} className="w-4 h-4" />
-              </label>
-            );
-          })}
-          {others.length === 0 && <p className="text-sm text-gray-400">他のユーザーがいません</p>}
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">ダッシュボード</p>
+          <p className="text-xs text-gray-400 mb-2">各ページの「共有」ボタンから追加できます</p>
+          {activeDashShares.length === 0 ? (
+            <p className="text-sm text-gray-400">共有していません</p>
+          ) : (
+            <div className="space-y-2">
+              {activeDashShares.map((s) => (
+                <div key={s.userId} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium">{s.username}</span>
+                  <button
+                    onClick={async () => {
+                      await sharingApi.removeDashboardShare(s.userId);
+                      qc.invalidateQueries({ queryKey: ["dashboardShares"] });
+                    }}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">評価</p>
+          {activeRatingShares.length === 0 ? (
+            <p className="text-sm text-gray-400">共有していません</p>
+          ) : (
+            <div className="space-y-2">
+              {activeRatingShares.map((s) => (
+                <div key={s.toUserId} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium">{s.toUsername}</span>
+                  <button
+                    onClick={async () => {
+                      await sharingApi.removeRatingShare(s.toUserId);
+                      qc.invalidateQueries({ queryKey: ["ratingShares"] });
+                    }}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <hr className="border-gray-200 dark:border-gray-700" />
+
+      {/* あなたへの共有 */}
+      <section className="space-y-5">
+        <h3 className="font-semibold">あなたへの共有</h3>
+
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">ダッシュボード</p>
+          {receivedDash.length === 0 ? (
+            <p className="text-sm text-gray-400">共有されていません</p>
+          ) : (
+            <div className="space-y-2">
+              {receivedDash.map((s) => (
+                <div key={s.userId} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium">{s.username}</span>
+                  <button
+                    onClick={() => navigate(`/dashboard/shared/${encodeURIComponent(s.username)}`)}
+                    className="text-xs text-blue-500 hover:underline"
+                  >
+                    ダッシュボードを見る →
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">評価</p>
+          {receivedRating.length === 0 ? (
+            <p className="text-sm text-gray-400">共有されていません</p>
+          ) : (
+            <div className="space-y-2">
+              {receivedRating.map((s) => (
+                <div key={s.userId} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium">{s.username}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
 
 function MediaTypesTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
   const { data: types } = useQuery({ queryKey: ["mediaTypes"], queryFn: mediaTypesApi.list });
+  const { i18n } = useTranslation();
   const [newName, setNewName] = useState("");
   const [category, setCategory] = useState<"book" | "movie" | "drama">("book");
 
@@ -258,7 +425,7 @@ function MediaTypesTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
             <div className="flex flex-wrap gap-2">
               {catTypes.map((t) => (
                 <span key={t.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border border-gray-200 dark:border-gray-700">
-                  {t.name}
+                  {getMediaTypeName(t, i18n.language)}
                   {!t.isDefault && (
                     <button onClick={() => deleteMutation.mutate(t.id)} className="text-gray-400 hover:text-red-500 ml-0.5">×</button>
                   )}
@@ -276,7 +443,10 @@ function MediaTypesTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
 function DataTab() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [importResult, setImportResult] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<{ ok: true; data: ImportResult } | { ok: false; msg: string } | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [modeModalOpen, setModeModalOpen] = useState(false);
+  type ImportMode = "merge-skip" | "merge-overwrite" | "replace";
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleExport = async () => {
@@ -290,28 +460,73 @@ function DataTab() {
     }
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (!confirm("現在のデータにインポートしますか？既存データと重複するIDはスキップされます。")) {
-      e.target.value = "";
-      return;
-    }
+    setPendingFile(file);
+    setModeModalOpen(true);
+  };
+
+  const runImport = async (mode: ImportMode) => {
+    if (!pendingFile) return;
+    setModeModalOpen(false);
     setImporting(true);
     setImportResult(null);
     try {
-      await exportImportApi.importData(file);
-      setImportResult("インポートが完了しました");
+      const res = await exportImportApi.importData(pendingFile, mode);
+      setImportResult({ ok: true, data: res.data });
     } catch {
-      setImportResult("インポートに失敗しました");
+      setImportResult({ ok: false, msg: "インポートに失敗しました" });
     } finally {
       setImporting(false);
-      e.target.value = "";
+      setPendingFile(null);
     }
   };
 
   return (
     <div className="space-y-6 max-w-md">
+      {/* Import mode selection modal */}
+      {modeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4">
+            <h3 className="font-semibold text-base">インポート方法を選択</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              ファイル: <span className="font-medium text-gray-700 dark:text-gray-200">{pendingFile?.name}</span>
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => runImport("merge-skip")}
+                className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <p className="font-medium text-sm">追加インポート（重複スキップ）</p>
+                <p className="text-xs text-gray-400 mt-0.5">既存データと重複するものはスキップし、新しいデータのみ追加します</p>
+              </button>
+              <button
+                onClick={() => runImport("merge-overwrite")}
+                className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <p className="font-medium text-sm">追加インポート（重複上書き）</p>
+                <p className="text-xs text-gray-400 mt-0.5">既存データと重複するものはインポートデータで上書きし、新しいデータも追加します</p>
+              </button>
+              <button
+                onClick={() => runImport("replace")}
+                className="w-full text-left px-4 py-3 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <p className="font-medium text-sm text-red-600 dark:text-red-400">差し替えインポート</p>
+                <p className="text-xs text-gray-400 mt-0.5">既存の書籍・映画・ドラマをすべて削除してからインポートします</p>
+              </button>
+            </div>
+            <button
+              onClick={() => { setModeModalOpen(false); setPendingFile(null); }}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors pt-1"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
       <div>
         <h3 className="font-semibold mb-1">データのエクスポート</h3>
         <p className="text-xs text-gray-400 mb-3">書籍・映画・ドラマのデータをJSONファイルとしてダウンロードします</p>
@@ -322,15 +537,32 @@ function DataTab() {
       <hr className="border-gray-200 dark:border-gray-700" />
       <div>
         <h3 className="font-semibold mb-1">データのインポート</h3>
-        <p className="text-xs text-gray-400 mb-3">エクスポートしたJSONファイルからデータを復元します</p>
-        <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+        <p className="text-xs text-gray-400 mb-3">エクスポートしたJSONファイルからデータを復元します。インポート方法はファイル選択後に選択できます。</p>
+        <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={onFileChange} />
         <button onClick={() => fileRef.current?.click()} disabled={importing} className="btn-secondary">
           {importing ? "インポート中..." : "JSONファイルを選択"}
         </button>
-        {importResult && (
-          <p className={`text-sm mt-2 ${importResult.includes("失敗") ? "text-red-500" : "text-green-600"}`}>
-            {importResult}
-          </p>
+        {importResult && !importResult.ok && (
+          <p className="text-sm mt-2 text-red-500">{importResult.msg}</p>
+        )}
+        {importResult?.ok && (
+          <div className="mt-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3 text-sm space-y-1">
+            <p className="font-medium text-green-700 dark:text-green-400">インポートが完了しました</p>
+            {(["books", "movies", "dramas"] as const).map((key) => {
+              const label = key === "books" ? "書籍" : key === "movies" ? "映画" : "ドラマ";
+              const s = importResult.data[key];
+              const parts = [];
+              if (s.added > 0) parts.push(`${s.added}件追加`);
+              if (s.updated > 0) parts.push(`${s.updated}件上書き`);
+              if (s.skipped > 0) parts.push(`${s.skipped}件スキップ`);
+              if (parts.length === 0) parts.push("変更なし");
+              return (
+                <p key={key} className="text-gray-600 dark:text-gray-400">
+                  {label}: {parts.join(" / ")}
+                </p>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
@@ -367,7 +599,7 @@ function BackupTab() {
         <div className="space-y-3">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={currentCfg.enabled}
-              onChange={(e) => setCfg({ ...currentCfg, enabled: e.target.checked })} className="w-4 h-4" />
+              onChange={(e) => setCfg({ ...currentCfg, enabled: e.target.checked })} />
             自動バックアップを有効にする
           </label>
           <div>

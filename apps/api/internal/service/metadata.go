@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 )
 
 // --- Google Books ---
@@ -19,6 +20,7 @@ type BookMeta struct {
 	ISBN          *string  `json:"isbn"`
 	CoverImageURL *string  `json:"coverImageUrl"`
 	Description   *string  `json:"description"`
+	Genres        []string `json:"genres"`
 }
 
 func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
@@ -40,6 +42,7 @@ func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
 				Title               string   `json:"title"`
 				Authors             []string `json:"authors"`
 				Publisher           string   `json:"publisher"`
+				Categories          []string `json:"categories"`
 				IndustryIdentifiers []struct {
 					Type       string `json:"type"`
 					Identifier string `json:"identifier"`
@@ -61,6 +64,7 @@ func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
 			GoogleBooksID: item.ID,
 			Title:         item.VolumeInfo.Title,
 			Authors:       item.VolumeInfo.Authors,
+			Genres:        item.VolumeInfo.Categories,
 		}
 		if item.VolumeInfo.Publisher != "" {
 			b.Publisher = &item.VolumeInfo.Publisher
@@ -98,14 +102,61 @@ func LookupISBN(ctx context.Context, isbn string) (*BookMeta, error) {
 // --- TMDB ---
 
 type ContentMeta struct {
-	TmdbID        int     `json:"tmdbId"`
-	Title         string  `json:"title"`
-	CoverImageURL *string `json:"coverImageUrl"`
-	ReleasedAt    *string `json:"releasedAt"`
-	Overview      *string `json:"overview"`
+	TmdbID        int      `json:"tmdbId"`
+	Title         string   `json:"title"`
+	CoverImageURL *string  `json:"coverImageUrl"`
+	ReleasedAt    *string  `json:"releasedAt"`
+	Overview      *string  `json:"overview"`
+	Genres        []string `json:"genres"`
 }
 
 const tmdbImageBase = "https://image.tmdb.org/t/p/w500"
+
+var (
+	tmdbGenreMu     sync.Mutex
+	tmdbMovieGenres map[int]string
+	tmdbTVGenres    map[int]string
+)
+
+func ensureTMDBGenres(ctx context.Context, mediaType string) map[int]string {
+	tmdbGenreMu.Lock()
+	defer tmdbGenreMu.Unlock()
+
+	var cache *map[int]string
+	if mediaType == "movie" {
+		cache = &tmdbMovieGenres
+	} else {
+		cache = &tmdbTVGenres
+	}
+	if *cache != nil {
+		return *cache
+	}
+
+	apiKey := os.Getenv("TMDB_API_KEY")
+	u := fmt.Sprintf("https://api.themoviedb.org/3/genre/%s/list?api_key=%s&language=ja-JP", mediaType, apiKey)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var gr struct {
+		Genres []struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"genres"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&gr); err != nil {
+		return nil
+	}
+	m := make(map[int]string, len(gr.Genres))
+	for _, g := range gr.Genres {
+		m[g.ID] = g.Name
+	}
+	*cache = m
+	return m
+}
 
 func SearchMoviesMeta(ctx context.Context, query string) ([]ContentMeta, error) {
 	return searchTMDB(ctx, "movie", query)
@@ -136,11 +187,14 @@ func searchTMDB(ctx context.Context, mediaType, query string) ([]ContentMeta, er
 			ReleaseDate  string `json:"release_date"`
 			FirstAirDate string `json:"first_air_date"`
 			Overview     string `json:"overview"`
+			GenreIDs     []int  `json:"genre_ids"`
 		} `json:"results"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
+
+	genreMap := ensureTMDBGenres(ctx, mediaType)
 
 	var contents []ContentMeta
 	for _, r := range result.Results {
@@ -162,6 +216,11 @@ func searchTMDB(ctx context.Context, mediaType, query string) ([]ContentMeta, er
 		}
 		if r.Overview != "" {
 			c.Overview = &r.Overview
+		}
+		for _, gid := range r.GenreIDs {
+			if name, ok := genreMap[gid]; ok {
+				c.Genres = append(c.Genres, name)
+			}
 		}
 		contents = append(contents, c)
 	}

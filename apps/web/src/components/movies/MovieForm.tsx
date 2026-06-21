@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import type { Movie, MovieCreateInput, MovieStatus } from "@kakera/shared";
 import { moviesApi } from "../../lib/api/movies";
 import { mediaTypesApi } from "../../lib/api/misc";
+import { getMediaTypeName } from "../../lib/mediaTypeLabels";
 import StarRating from "../ui/StarRating";
 import TagBadge from "../ui/TagBadge";
 
@@ -18,7 +19,7 @@ interface Props {
 const STATUSES = ["unwatched", "watched"] as const;
 
 export default function MovieForm({ initial, onSubmit, onCancel, loading }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
   const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
@@ -33,6 +34,7 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
   const [tagInput, setTagInput] = useState("");
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
+  const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof moviesApi.searchMeta>>>([]);
 
@@ -50,6 +52,7 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     if (meta.releasedAt) setReleasedAt(meta.releasedAt);
     setTmdbId(meta.tmdbId.toString());
+    if (meta.genres?.length) setGenres(meta.genres);
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -72,6 +75,7 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
       coverImageUrl: coverImageUrl || undefined,
       status: status as MovieCreateInput["status"],
       mediaTypes,
+      genres,
       rating,
       tags,
       memo: memo || undefined,
@@ -154,13 +158,25 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
           {movieMediaTypes.map((m) => (
             <label key={m.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
               <input type="checkbox" checked={mediaTypes.includes(m.name)}
-                onChange={(e) => setMediaTypes(e.target.checked ? [...mediaTypes, m.name] : mediaTypes.filter((x) => x !== m.name))}
-                className="rounded" />
-              {m.name}
+                onChange={(e) => setMediaTypes(e.target.checked ? [...mediaTypes, m.name] : mediaTypes.filter((x) => x !== m.name))} />
+              {getMediaTypeName(m, i18n.language)}
             </label>
           ))}
         </div>
       </div>
+
+      {genres.length > 0 && (
+        <div>
+          <label className="form-label">ジャンル</label>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {genres.map((g) => (
+              <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="form-label">{t("movie.rating")}</label>

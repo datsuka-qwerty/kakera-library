@@ -1,3 +1,5 @@
+import type { SharedRating } from "./common";
+
 export type DramaStatus =
   | "interested"
   | "watching"
@@ -21,10 +23,12 @@ export interface Drama {
   mediaTypes: DramaMediaType[];
   rating?: number; // 1-5
   tags: string[];
+  genres: string[];
   memo?: string;
   tmdbId?: number;
   createdAt: string;
   updatedAt: string;
+  sharedRatings?: SharedRating[];
 }
 
 export interface DramaCreateInput {
@@ -38,6 +42,7 @@ export interface DramaCreateInput {
   coverImageUrl?: string;
   status: DramaStatus;
   mediaTypes: DramaMediaType[];
+  genres?: string[];
   rating?: number;
   tags?: string[];
   memo?: string;

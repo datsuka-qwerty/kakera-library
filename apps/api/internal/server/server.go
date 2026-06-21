@@ -33,6 +33,10 @@ func registerRoutes(e *echo.Echo) {
 
 	v1 := e.Group("/api/v1")
 
+	// Setup (public — only functional when no users exist)
+	v1.GET("/setup", handler.GetSetupStatus)
+	v1.POST("/setup", handler.RunSetup)
+
 	// Auth
 	auth := v1.Group("/auth")
 	auth.POST("/login", handler.Login)
@@ -54,12 +58,14 @@ func registerRoutes(e *echo.Echo) {
 
 	// Sharing
 	sharing := v1.Group("/sharing", apimiddleware.JWT())
+	sharing.GET("/users", handler.ListUsersForSharing)
 	sharing.GET("/dashboard", handler.ListDashboardShares)
 	sharing.POST("/dashboard/:targetUserId", handler.SetDashboardShare)
 	sharing.DELETE("/dashboard/:targetUserId", handler.RemoveDashboardShare)
 	sharing.GET("/ratings", handler.ListRatingShares)
 	sharing.POST("/ratings/:targetUserId", handler.SetRatingShare)
 	sharing.DELETE("/ratings/:targetUserId", handler.RemoveRatingShare)
+	sharing.GET("/received", handler.ListReceivedShares)
 
 	// Books
 	books := v1.Group("/books", apimiddleware.JWT())
@@ -99,7 +105,7 @@ func registerRoutes(e *echo.Echo) {
 
 	// Dashboard stats
 	v1.GET("/dashboard/stats", handler.GetDashboardStats, apimiddleware.JWT())
-	v1.GET("/dashboard/stats/:userId", handler.GetUserDashboardStats, apimiddleware.JWT())
+	v1.GET("/dashboard/stats/:username", handler.GetUserDashboardStats, apimiddleware.JWT())
 
 	// External metadata search
 	meta := v1.Group("/metadata", apimiddleware.JWT())
@@ -120,5 +126,5 @@ func registerRoutes(e *echo.Echo) {
 
 	// Export / Import
 	v1.GET("/export", handler.Export, apimiddleware.JWT())
-	v1.POST("/import", handler.Import, apimiddleware.JWT(), apimiddleware.AdminOnly())
+	v1.POST("/import", handler.Import, apimiddleware.JWT())
 }

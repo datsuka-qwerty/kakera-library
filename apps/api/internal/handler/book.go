@@ -40,6 +40,7 @@ func CreateBook(c echo.Context) error {
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
+		Genres        []string `json:"genres"`
 		PurchasePlace *string  `json:"purchasePlace"`
 		StartedAt     *string  `json:"startedAt"`
 		CompletedAt   *string  `json:"completedAt"`
@@ -56,7 +57,7 @@ func CreateBook(c echo.Context) error {
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
 		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
+		Genres: req.Genres, PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
 		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, GoogleBooksID: req.GoogleBooksID,
 	})
 	if err != nil {
@@ -86,6 +87,7 @@ func UpdateBook(c echo.Context) error {
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
+		Genres        []string `json:"genres"`
 		PurchasePlace *string  `json:"purchasePlace"`
 		StartedAt     *string  `json:"startedAt"`
 		CompletedAt   *string  `json:"completedAt"`
@@ -102,7 +104,7 @@ func UpdateBook(c echo.Context) error {
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
 		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
+		Genres: req.Genres, PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
 		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, GoogleBooksID: req.GoogleBooksID,
 	})
 	if err != nil {

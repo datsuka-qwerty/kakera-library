@@ -1,8 +1,10 @@
-import { Outlet, NavLink } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Film, Tv, Settings, Sun, Moon } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
+import { Outlet, NavLink } from "react-router-dom";
+import { LayoutDashboard, BookOpen, Film, Tv, Sun, Moon, Share2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
+import { useAuthStore } from "../store/authStore";
+import ProfilePopover from "./ProfilePopover";
 
 const navItems = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "nav.dashboard" },
@@ -30,20 +32,25 @@ function useDarkMode() {
 }
 
 export default function Layout() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { dark, toggle } = useDarkMode();
+  const { user } = useAuthStore();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <div className="flex h-screen">
-      <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-surface-DEFAULT dark:bg-surface-elevated-dark">
-        <div className="px-4 py-5">
-          <h1 className="text-base font-bold tracking-tight">Kakera Library</h1>
+      <aside className="w-14 md:w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-surface-DEFAULT dark:bg-surface-elevated-dark">
+        <div className="px-3 md:px-4 py-5 flex items-center justify-center md:justify-start">
+          <h1 className="text-base font-bold tracking-tight hidden md:block">Kakera Library</h1>
+          <span className="text-base font-bold md:hidden">K</span>
         </div>
+
         <nav className="flex-1 px-2 space-y-0.5">
           {navItems.map(({ to, icon: Icon, labelKey }) => (
             <NavLink
               key={to}
               to={to}
+              title={t(labelKey)}
               className={({ isActive }) =>
                 clsx(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -53,45 +60,65 @@ export default function Layout() {
                 )
               }
             >
-              <Icon size={17} />
-              {t(labelKey)}
+              <Icon size={17} className="flex-shrink-0" />
+              <span className="hidden md:inline">{t(labelKey)}</span>
             </NavLink>
           ))}
         </nav>
-        <div className="px-2 pb-2 space-y-0.5">
-          {/* Language toggle */}
-          <button
-            onClick={() => i18n.changeLanguage(i18n.language === "ja" ? "en" : "ja")}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            🌐 {i18n.language === "ja" ? "English" : "日本語"}
-          </button>
-          {/* Dark mode toggle */}
+
+        {/* Bottom section: ダークモード → 共有 → アカウント名 */}
+        <div className="relative px-2 pb-2 space-y-0.5">
+          {profileOpen && <ProfilePopover onClose={() => setProfileOpen(false)} />}
+
+          {/* ダークモード */}
           <button
             onClick={toggle}
+            title={dark ? "ライトモード" : "ダークモード"}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            {dark ? <Sun size={17} /> : <Moon size={17} />}
-            {dark ? "ライトモード" : "ダークモード"}
+            {dark ? <Sun size={17} className="flex-shrink-0" /> : <Moon size={17} className="flex-shrink-0" />}
+            <span className="hidden md:inline">{dark ? "ライトモード" : "ダークモード"}</span>
           </button>
+
+          {/* 共有 */}
           <NavLink
-            to="/settings"
+            to="/sharing"
+            onClick={() => setProfileOpen(false)}
+            title="共有"
             className={({ isActive }) =>
               clsx(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                 isActive
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                  ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               )
             }
           >
-            <Settings size={17} />
-            {t("nav.settings")}
+            <Share2 size={17} className="flex-shrink-0" />
+            <span className="hidden md:inline">共有</span>
           </NavLink>
+
+          {/* アカウント名 */}
+          <button
+            onClick={() => setProfileOpen((v) => !v)}
+            title={user?.username}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-600 flex-shrink-0 flex items-center justify-center">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-gray-600 dark:text-gray-300 select-none">
+                  {user?.username?.[0]?.toUpperCase()}
+                </span>
+              )}
+            </div>
+            <span className="flex-1 text-left truncate hidden md:inline">{user?.username}</span>
+          </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 min-w-0 overflow-auto p-6">
         <Outlet />
       </main>
     </div>

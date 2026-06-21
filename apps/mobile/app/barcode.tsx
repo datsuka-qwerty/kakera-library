@@ -1,14 +1,23 @@
 import { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator, ScrollView } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
-import { X } from "lucide-react-native";
+import { X, CheckCircle, ArrowRight, Trash2 } from "lucide-react-native";
 import { booksApi } from "../lib/api";
+import { useBarcodeStore } from "../store/barcodeStore";
+import { useAccent } from "../lib/theme";
 
 export default function BarcodeScreen() {
+  const accent = useAccent();
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [pendingIsbns, setPendingIsbns] = useState<Set<string>>(new Set());
+  const { scannedBooks, addBook, removeBook, clear } = useBarcodeStore();
+
+  useEffect(() => {
+    // Clear previous session on mount
+    clear();
+  }, []);
 
   useEffect(() => {
     if (permission && !permission.granted) {
@@ -17,37 +26,73 @@ export default function BarcodeScreen() {
   }, [permission]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return;
-    setScanned(true);
-    setLoading(true);
+    const isbn = data.trim();
+    if (
+      scanning ||
+      pendingIsbns.has(isbn) ||
+      scannedBooks.some((b) => b.isbn === isbn)
+    ) return;
+
+    setPendingIsbns((prev) => new Set(prev).add(isbn));
     try {
-      const meta = await booksApi.lookupISBN(data);
-      router.back();
-      router.setParams({ isbn: data, title: meta.title, authors: meta.authors?.join(", ") ?? "" });
+      const meta = await booksApi.lookupISBN(isbn);
+      addBook({
+        isbn,
+        title: meta.title,
+        authors: meta.authors ?? [],
+        coverImageUrl: meta.coverImageUrl,
+        publisher: meta.publisher,
+        googleBooksId: meta.googleBooksId,
+        status: "want_to_read",
+        rating: undefined,
+        memo: "",
+        tags: [],
+        mediaTypes: [],
+      });
     } catch {
-      Alert.alert("見つかりません", `ISBN: ${data}\nこの書籍の情報が見つかりませんでした`, [
-        { text: "再スキャン", onPress: () => setScanned(false) },
-        { text: "戻る", onPress: () => router.back() },
-      ]);
+      addBook({
+        isbn,
+        title: `ISBN: ${isbn}`,
+        authors: [],
+        status: "want_to_read",
+        rating: undefined,
+        memo: "",
+        tags: [],
+        mediaTypes: [],
+      });
     } finally {
-      setLoading(false);
+      setPendingIsbns((prev) => {
+        const next = new Set(prev);
+        next.delete(isbn);
+        return next;
+      });
     }
   };
 
+  const goToRegister = () => {
+    if (scannedBooks.length === 0) {
+      Alert.alert("書籍がありません", "先にバーコードをスキャンしてください");
+      return;
+    }
+    router.push("/barcode-batch");
+  };
+
   if (!permission) {
-    return <View style={s.container}><ActivityIndicator /></View>;
+    return <View style={s.container}><ActivityIndicator color="#fff" /></View>;
   }
 
   if (!permission.granted) {
     return (
       <View style={s.container}>
         <Text style={s.permText}>カメラへのアクセスが必要です</Text>
-        <Pressable style={s.btn} onPress={requestPermission}>
+        <Pressable style={[s.btn, { backgroundColor: accent }]} onPress={requestPermission}>
           <Text style={s.btnText}>許可する</Text>
         </Pressable>
       </View>
     );
   }
+
+  const totalPending = pendingIsbns.size;
 
   return (
     <View style={{ flex: 1 }}>
@@ -55,27 +100,87 @@ export default function BarcodeScreen() {
         style={{ flex: 1 }}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "isbn13"] }}
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        onBarcodeScanned={handleBarCodeScanned}
       />
-      <View style={s.overlay}>
-        <Pressable style={s.closeBtn} onPress={() => router.back()}>
-          <X size={24} color="#fff" />
-        </Pressable>
-        <View style={s.frame} />
-        <Text style={s.hint}>バーコードをフレームに合わせてください</Text>
-        {loading && <ActivityIndicator color="#fff" size="large" style={{ marginTop: 16 }} />}
+
+      {/* Overlay */}
+      <View style={s.overlay} pointerEvents="box-none">
+        {/* Top bar */}
+        <View style={s.topBar}>
+          <Pressable style={s.closeBtn} onPress={() => { clear(); router.back(); }}>
+            <X size={24} color="#fff" />
+          </Pressable>
+          <Text style={s.scanLabel}>連続スキャン</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Scan frame */}
+        <View style={s.frameArea}>
+          <View style={s.frame} />
+          <Text style={s.hint}>バーコードをフレームに合わせてください</Text>
+          {totalPending > 0 && (
+            <View style={s.fetchingBadge}>
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={s.fetchingText}>書籍情報を取得中...</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bottom panel */}
+        <View style={s.bottomPanel} pointerEvents="box-none">
+          {scannedBooks.length > 0 && (
+            <ScrollView style={s.scannedList} keyboardShouldPersistTaps="handled">
+              {scannedBooks.map((book) => (
+                <View key={book.isbn} style={s.scannedItem}>
+                  <CheckCircle size={16} color="#4ADE80" />
+                  <Text style={s.scannedTitle} numberOfLines={1}>{book.title}</Text>
+                  <Pressable onPress={() => removeBook(book.isbn)}>
+                    <Trash2 size={16} color="#F87171" />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          <View style={s.bottomActions}>
+            <Text style={s.countText}>
+              {scannedBooks.length}冊スキャン済み
+            </Text>
+            <Pressable
+              style={[s.registerBtn, { backgroundColor: accent }, scannedBooks.length === 0 && s.registerBtnDisabled]}
+              onPress={goToRegister}
+            >
+              <Text style={s.registerBtnText}>登録へ進む</Text>
+              <ArrowRight size={18} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
       </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#000" },
-  permText: { color: "#fff", marginBottom: 16 },
-  btn: { backgroundColor: "#2563EB", borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+  container: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
+  permText: { color: "#fff", marginBottom: 16, fontSize: 15 },
+  btn: { borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 },
   btnText: { color: "#fff", fontWeight: "600" },
-  overlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
-  closeBtn: { position: "absolute", top: 56, right: 20, padding: 8 },
+  overlay: { ...StyleSheet.absoluteFillObject, flexDirection: "column" },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 60, paddingHorizontal: 20, paddingBottom: 12 },
+  closeBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  scanLabel: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  frameArea: { flex: 1, alignItems: "center", justifyContent: "center" },
   frame: { width: 260, height: 120, borderWidth: 2, borderColor: "#fff", borderRadius: 12 },
-  hint: { color: "#fff", marginTop: 20, fontSize: 14 },
+  hint: { color: "#fff", marginTop: 16, fontSize: 13, opacity: 0.9 },
+  fetchingBadge: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, backgroundColor: "rgba(0,0,0,0.5)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  fetchingText: { color: "#fff", fontSize: 12 },
+  bottomPanel: { backgroundColor: "rgba(0,0,0,0.75)", paddingBottom: 32 },
+  scannedList: { maxHeight: 160, paddingHorizontal: 16, paddingTop: 12 },
+  scannedItem: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(255,255,255,0.1)" },
+  scannedTitle: { flex: 1, color: "#fff", fontSize: 13 },
+  bottomActions: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 12 },
+  countText: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
+  registerBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+  registerBtnDisabled: { opacity: 0.4 },
+  registerBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
 });

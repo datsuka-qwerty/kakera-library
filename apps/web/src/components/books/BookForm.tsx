@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import type { Book, BookCreateInput } from "@kakera/shared";
 import { booksApi } from "../../lib/api/books";
 import { mediaTypesApi } from "../../lib/api/misc";
+import { getMediaTypeName } from "../../lib/mediaTypeLabels";
 import StarRating from "../ui/StarRating";
 import TagBadge from "../ui/TagBadge";
 
@@ -18,7 +19,7 @@ interface Props {
 const STATUSES = ["want_to_read", "reading", "completed", "on_hold"] as const;
 
 export default function BookForm({ initial, onSubmit, onCancel, loading }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
   const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
@@ -36,6 +37,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const [tagInput, setTagInput] = useState("");
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [googleBooksId, setGoogleBooksId] = useState(initial?.googleBooksId ?? "");
+  const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof booksApi.searchMeta>>>([]);
@@ -64,6 +66,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
     if (meta.isbn) setIsbn(meta.isbn);
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     setGoogleBooksId(meta.googleBooksId);
+    if (meta.genres?.length) setGenres(meta.genres);
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -86,6 +89,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
       coverImageUrl: coverImageUrl || undefined,
       status: status as BookCreateInput["status"],
       mediaTypes,
+      genres,
       purchasePlace: purchasePlace || undefined,
       startedAt: startedAt || undefined,
       completedAt: completedAt || undefined,
@@ -198,13 +202,26 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
                 onChange={(e) =>
                   setMediaTypes(e.target.checked ? [...mediaTypes, m.name] : mediaTypes.filter((x) => x !== m.name))
                 }
-                className="rounded"
               />
-              {m.name}
+              {getMediaTypeName(m, i18n.language)}
             </label>
           ))}
         </div>
       </div>
+
+      {/* Genres (from metadata, read-only) */}
+      {genres.length > 0 && (
+        <div>
+          <label className="form-label">ジャンル</label>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {genres.map((g) => (
+              <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rating */}
       <div>

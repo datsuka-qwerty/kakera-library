@@ -1,15 +1,19 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View, Text, FlatList, TextInput, Pressable, StyleSheet,
   Modal, ScrollView, Alert, ActivityIndicator,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
-import { Plus, Search, X } from "lucide-react-native";
-import { dramasApi } from "../../lib/api";
+import { useFocusEffect, router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Plus, Search, X, Layers, ChevronRight, List } from "lucide-react-native";
+import { dramasApi, mediaTypesApi } from "../../lib/api";
 import type { Drama, DramaStatus } from "@kakera/shared";
+import { useLanguageStore } from "../../store/languageStore";
+import { getMediaTypeName } from "../../lib/mediaTypeLabels";
 import StatusBadge from "../../components/ui/StatusBadge";
 import StarRating from "../../components/ui/StarRating";
 import CoverImage from "../../components/ui/CoverImage";
+import { useAccent, useTheme } from "../../lib/theme";
 
 const STATUSES = [
   { value: "", label: "すべて" },
@@ -20,12 +24,37 @@ const STATUSES = [
 ];
 
 export default function DramasScreen() {
+  const accent = useAccent();
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [dramas, setDramas] = useState<Drama[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Drama | null>(null);
+  const [groupBySeries, setGroupBySeries] = useState(true);
+  const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
+
+  const seriesGroups = useMemo(() => {
+    const groups = new Map<string, Drama[]>();
+    dramas.forEach((d) => {
+      const key = d.seriesName ?? "__none__";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(d);
+    });
+    groups.forEach((items) => items.sort((a, b) =>
+      (a.firstSeasonAiredAt ?? "").localeCompare(b.firstSeasonAiredAt ?? "")
+    ));
+    return groups;
+  }, [dramas]);
+
+  const toggleSeries = (key: string) =>
+    setExpandedSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,57 +75,120 @@ export default function DramasScreen() {
   const onSaved = () => { setModalOpen(false); load(); };
 
   return (
-    <View style={s.container}>
-      <View style={s.toolbar}>
-        <View style={s.searchRow}>
-          <Search size={16} color="#9CA3AF" style={{ position: "absolute", left: 10, zIndex: 1 }} />
+    <View style={[s.container, { backgroundColor: theme.bg }]}>
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <View style={[s.searchRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Search size={16} color={theme.placeholder} />
           <TextInput
-            style={s.searchInput}
+            style={[s.searchInput, { color: theme.text }]}
             placeholder="タイトルで検索"
+            placeholderTextColor={theme.placeholder}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={load}
             returnKeyType="search"
           />
         </View>
-        <Pressable style={s.addBtn} onPress={openAdd}>
+        <Pressable style={[s.iconBtn, { backgroundColor: groupBySeries ? accent : theme.iconBtn }]} onPress={() => setGroupBySeries((v) => !v)}>
+          {groupBySeries ? <List size={20} color="#fff" /> : <Layers size={20} color="#fff" />}
+        </Pressable>
+        <Pressable style={[s.iconBtn, { backgroundColor: accent }]} onPress={openAdd}>
           <Plus size={20} color="#fff" />
         </Pressable>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {STATUSES.map((st) => (
           <Pressable
             key={st.value}
-            style={[s.filterChip, status === st.value && s.filterChipActive]}
+            style={[s.filterChip, { backgroundColor: status === st.value ? accent : theme.borderLight }]}
             onPress={() => setStatus(st.value)}
           >
-            <Text style={[s.filterChipText, status === st.value && s.filterChipTextActive]}>{st.label}</Text>
+            <Text style={[s.filterChipText, { color: status === st.value ? "#fff" : theme.textSub }]}>{st.label}</Text>
           </Pressable>
         ))}
       </ScrollView>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} />
+        <ActivityIndicator style={{ marginTop: 40 }} color={accent} />
+      ) : groupBySeries ? (
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 24 }}>
+          {dramas.length === 0 && <Text style={[s.empty, { color: theme.textMuted }]}>ドラマがありません</Text>}
+          {Array.from(seriesGroups.entries()).map(([key, items]) => {
+            if (key === "__none__") {
+              return items.map((item) => (
+                <Pressable key={item.id} style={[s.card, { backgroundColor: theme.card }]} onPress={() => openEdit(item)}>
+                  <CoverImage src={item.coverImageUrl} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={[s.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+                    {item.totalSeasons != null && <Text style={[s.cardSub, { color: theme.textMuted }]}>{item.totalSeasons}シーズン</Text>}
+                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                      <StatusBadge status={item.status} />
+                      {item.rating != null && <StarRating value={item.rating} readonly size={14} />}
+                    </View>
+                  </View>
+                </Pressable>
+              ));
+            }
+            const isExpanded = expandedSeries.has(key);
+            return (
+              <View key={key}>
+                <Pressable
+                  style={[s.seriesRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+                  onPress={() => toggleSeries(key)}
+                >
+                  <CoverImage src={items[0]?.coverImageUrl} width={32} height={44} />
+                  <ChevronRight size={14} color={theme.textMuted} style={{ transform: [{ rotate: isExpanded ? "90deg" : "0deg" }] }} />
+                  <Text style={[s.seriesTitle, { color: theme.text, flex: 1 }]} numberOfLines={1}>{key}</Text>
+                  <Text style={[s.seriesCount, { color: theme.textMuted }]}>{items.length}作品</Text>
+                </Pressable>
+                {isExpanded && items.map((item) => (
+                  <Pressable key={item.id} style={[s.card, { backgroundColor: theme.card, marginTop: 4 }]} onPress={() => openEdit(item)}>
+                    <CoverImage src={item.coverImageUrl} />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={[s.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+                      {item.totalSeasons != null && <Text style={[s.cardSub, { color: theme.textMuted }]}>{item.totalSeasons}シーズン</Text>}
+                      <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                        <StatusBadge status={item.status} />
+                        {item.rating != null && <StarRating value={item.rating} readonly size={14} />}
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
       ) : (
         <FlatList
           data={dramas}
           keyExtractor={(d) => d.id}
-          contentContainerStyle={{ padding: 16, gap: 10 }}
+          contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 24 }}
           renderItem={({ item }) => (
-            <Pressable style={s.card} onPress={() => openEdit(item)}>
+            <Pressable style={[s.card, { backgroundColor: theme.card }]} onPress={() => openEdit(item)}>
               <CoverImage src={item.coverImageUrl} />
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={s.cardTitle} numberOfLines={2}>{item.title}</Text>
-                {item.totalSeasons != null && <Text style={s.cardSub}>{item.totalSeasons}シーズン</Text>}
+                <Text style={[s.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+                {item.totalSeasons != null && <Text style={[s.cardSub, { color: theme.textMuted }]}>{item.totalSeasons}シーズン</Text>}
                 <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                   <StatusBadge status={item.status} />
                   {item.rating != null && <StarRating value={item.rating} readonly size={14} />}
                 </View>
+                {item.sharedRatings && item.sharedRatings.length > 0 && (
+                  <View style={{ gap: 2 }}>
+                    {item.sharedRatings.map((sr) => (
+                      <View key={sr.username} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                        <Text style={{ fontSize: 11, color: theme.textMuted }}>{sr.username}</Text>
+                        <StarRating value={sr.rating} readonly size={11} />
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={s.empty}>ドラマがありません</Text>}
+          ListEmptyComponent={<Text style={[s.empty, { color: theme.textMuted }]}>ドラマがありません</Text>}
         />
       )}
 
@@ -110,16 +202,37 @@ export default function DramasScreen() {
 interface FormProps { initial: Drama | null; onCancel: () => void; onSaved: () => void; }
 
 function DramaForm({ initial, onCancel, onSaved }: FormProps) {
+  const accent = useAccent();
+  const theme = useTheme();
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
   const [totalSeasons, setTotalSeasons] = useState(initial?.totalSeasons?.toString() ?? "");
-  const [status, setStatus] = useState(initial?.status ?? "interested");
+  const [firstSeasonAiredAt, setFirstSeasonAiredAt] = useState(initial?.firstSeasonAiredAt ?? "");
+  const [currentSeasonAiredAt, setCurrentSeasonAiredAt] = useState(initial?.currentSeasonAiredAt ?? "");
+  const [watchStartedAt, setWatchStartedAt] = useState(initial?.watchStartedAt ?? "");
   const [currentSeason, setCurrentSeason] = useState(initial?.currentSeason?.toString() ?? "");
-  const [rating, setRating] = useState(initial?.rating ?? undefined);
+  const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
+  const [status, setStatus] = useState<DramaStatus>(initial?.status ?? "interested");
+  const [rating, setRating] = useState<number | undefined>(initial?.rating ?? undefined);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
   const [memo, setMemo] = useState(initial?.memo ?? "");
-  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string }[]>([]);
+  const [mediaTypes, setMediaTypes] = useState<string[]>(initial?.mediaTypes ?? []);
+  const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
+  const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string }[]>([]);
+  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[] }[]>([]);
+  const { language } = useLanguageStore();
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const showCurrentSeason = status === "watching" || status === "dropped";
+
+  useEffect(() => {
+    mediaTypesApi.list().then((all) =>
+      setAvailableMediaTypes(all.filter((m) => m.category === "drama"))
+    ).catch(() => {});
+  }, []);
 
   const searchMeta = async () => {
     if (!metaSearch.trim()) return;
@@ -128,7 +241,7 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
       const res = await dramasApi.searchMeta(metaSearch);
       setMetaResults(res);
     } catch {
-      Alert.alert("エラー", "メタデータ検索に失敗しました");
+      Alert.alert("エラー", "検索に失敗しました");
     } finally {
       setSearching(false);
     }
@@ -136,9 +249,23 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
 
   const applyMeta = (m: typeof metaResults[0]) => {
     setTitle(m.title);
+    if (m.coverImageUrl) setCoverImageUrl(m.coverImageUrl);
+    if (m.releasedAt) setFirstSeasonAiredAt(m.releasedAt);
+    if (m.genres?.length) setGenres(m.genres);
     setMetaResults([]);
     setMetaSearch("");
   };
+
+  const addTag = () => {
+    const v = tagInput.trim();
+    if (v && !tags.includes(v)) setTags([...tags, v]);
+    setTagInput("");
+  };
+
+  const toggleMediaType = (name: string) =>
+    setMediaTypes((prev) =>
+      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]
+    );
 
   const save = async () => {
     if (!title.trim()) { Alert.alert("エラー", "タイトルは必須です"); return; }
@@ -146,16 +273,24 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
     try {
       const payload = {
         title: title.trim(),
+        seriesName: seriesName.trim() || undefined,
         totalSeasons: totalSeasons ? parseInt(totalSeasons, 10) : undefined,
+        firstSeasonAiredAt: firstSeasonAiredAt.trim() || undefined,
+        currentSeasonAiredAt: currentSeasonAiredAt.trim() || undefined,
+        watchStartedAt: watchStartedAt.trim() || undefined,
+        currentSeason: showCurrentSeason && currentSeason ? parseInt(currentSeason, 10) : undefined,
+        coverImageUrl: coverImageUrl.trim() || undefined,
         status,
-        currentSeason: currentSeason ? parseInt(currentSeason, 10) : undefined,
-        rating: rating ?? undefined,
+        mediaTypes,
+        genres,
+        rating,
+        tags,
         memo: memo.trim() || undefined,
       };
       if (initial) {
         await dramasApi.update(initial.id, payload);
       } else {
-        await dramasApi.create(payload as Parameters<typeof dramasApi.create>[0]);
+        await dramasApi.create(payload);
       }
       onSaved();
     } catch {
@@ -165,71 +300,152 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
     }
   };
 
-  const del = async () => {
+  const del = () => {
     Alert.alert("削除確認", "このドラマを削除しますか？", [
       { text: "キャンセル", style: "cancel" },
       { text: "削除", style: "destructive", onPress: async () => { await dramasApi.delete(initial!.id); onSaved(); } },
     ]);
   };
 
-  const showCurrentSeason = status === "watching" || status === "dropped";
-
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F0E8" }}>
-      <View style={f.header}>
-        <Pressable onPress={onCancel}><X size={22} color="#374151" /></Pressable>
-        <Text style={f.headerTitle}>{initial ? "ドラマを編集" : "ドラマを追加"}</Text>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <View style={[f.header, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
+        <Pressable onPress={onCancel}><X size={22} color={theme.textSub} /></Pressable>
+        <Text style={[f.headerTitle, { color: theme.text }]}>{initial ? "ドラマを編集" : "ドラマを追加"}</Text>
         <Pressable onPress={save} disabled={saving}>
-          <Text style={f.saveText}>{saving ? "保存中..." : "保存"}</Text>
+          <Text style={[f.saveText, { color: accent }]}>{saving ? "保存中..." : "保存"}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <Text style={f.sectionTitle}>TMDBで検索</Text>
+        <Text style={[f.sectionTitle, { color: theme.textMuted }]}>TMDBで検索</Text>
         <View style={f.metaRow}>
-          <TextInput style={[f.input, { flex: 1 }]} placeholder="タイトルで検索" value={metaSearch} onChangeText={setMetaSearch} />
-          <Pressable style={f.searchBtn} onPress={searchMeta}>
+          <TextInput style={[f.input, { flex: 1, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
+            placeholder="タイトルで検索"
+            placeholderTextColor={theme.placeholder} value={metaSearch} onChangeText={setMetaSearch} />
+          <Pressable style={[f.actionBtn, { backgroundColor: accent }]} onPress={searchMeta}>
             {searching ? <ActivityIndicator color="#fff" size="small" /> : <Search size={16} color="#fff" />}
           </Pressable>
         </View>
 
         {metaResults.length > 0 && (
-          <View style={f.metaList}>
+          <View style={[f.metaList, { borderColor: theme.border }]}>
             {metaResults.slice(0, 5).map((m) => (
-              <Pressable key={m.tmdbId} style={f.metaItem} onPress={() => applyMeta(m)}>
+              <Pressable key={m.tmdbId} style={[f.metaItem, { backgroundColor: theme.card, borderBottomColor: theme.borderLight }]} onPress={() => applyMeta(m)}>
                 <CoverImage src={m.coverImageUrl} width={36} height={48} />
-                <Text style={f.metaTitle} numberOfLines={2}>{m.title}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[f.metaTitle, { color: theme.text }]} numberOfLines={2}>{m.title}</Text>
+                  {m.releasedAt && <Text style={[f.metaSub, { color: theme.textMuted }]}>{m.releasedAt}</Text>}
+                </View>
               </Pressable>
             ))}
           </View>
         )}
 
-        <Text style={f.label}>タイトル *</Text>
-        <TextInput style={f.input} value={title} onChangeText={setTitle} />
-        <Text style={f.label}>総シーズン数</Text>
-        <TextInput style={f.input} value={totalSeasons} onChangeText={setTotalSeasons} keyboardType="number-pad" />
-        <Text style={f.label}>ステータス</Text>
-        <View style={f.statusRow}>
+        <Text style={[f.label, { color: theme.textMuted }]}>タイトル *</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={title} onChangeText={setTitle} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>シリーズ名</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesName} onChangeText={setSeriesName} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>総シーズン数</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={totalSeasons} onChangeText={setTotalSeasons} keyboardType="number-pad" />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>ステータス</Text>
+        <View style={f.chipRow}>
           {STATUSES.filter((st) => st.value).map((st) => (
-            <Pressable key={st.value} style={[f.statusChip, status === st.value && f.statusChipActive]} onPress={() => setStatus(st.value as DramaStatus)}>
-              <Text style={[f.statusChipText, status === st.value && f.statusChipTextActive]}>{st.label}</Text>
+            <Pressable
+              key={st.value}
+              style={[f.chip, { backgroundColor: status === st.value ? accent : theme.borderLight }]}
+              onPress={() => setStatus(st.value as DramaStatus)}
+            >
+              <Text style={[f.chipText, { color: status === st.value ? "#fff" : theme.textSub }]}>{st.label}</Text>
             </Pressable>
           ))}
         </View>
+
         {showCurrentSeason && (
           <>
-            <Text style={f.label}>現在のシーズン</Text>
-            <TextInput style={f.input} value={currentSeason} onChangeText={setCurrentSeason} keyboardType="number-pad" />
+            <Text style={[f.label, { color: theme.textMuted }]}>現在のシーズン</Text>
+            <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={currentSeason} onChangeText={setCurrentSeason} keyboardType="number-pad" />
           </>
         )}
-        <Text style={f.label}>評価</Text>
+
+        <Text style={[f.label, { color: theme.textMuted }]}>第1シーズン放映日（YYYY-MM-DD）</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={firstSeasonAiredAt} onChangeText={setFirstSeasonAiredAt}
+          placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>現行シーズン放映日（YYYY-MM-DD）</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={currentSeasonAiredAt} onChangeText={setCurrentSeasonAiredAt}
+          placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>視聴開始日（YYYY-MM-DD）</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={watchStartedAt} onChangeText={setWatchStartedAt}
+          placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>カバー画像URL</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={coverImageUrl} onChangeText={setCoverImageUrl} autoCapitalize="none" />
+
+        {availableMediaTypes.length > 0 && (
+          <>
+            <Text style={[f.label, { color: theme.textMuted }]}>メディア種別</Text>
+            <View style={f.chipRow}>
+              {availableMediaTypes.map((m) => (
+                <Pressable
+                  key={m.id}
+                  style={[f.chip, { backgroundColor: mediaTypes.includes(m.name) ? accent : theme.borderLight }]}
+                  onPress={() => toggleMediaType(m.name)}
+                >
+                  <Text style={[f.chipText, { color: mediaTypes.includes(m.name) ? "#fff" : theme.textSub }]}>{getMediaTypeName(m, language)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+
+        {genres.length > 0 && (
+          <>
+            <Text style={[f.label, { color: theme.textMuted }]}>ジャンル</Text>
+            <View style={f.chipRow}>
+              {genres.map((g) => (
+                <View key={g} style={[f.chip, { backgroundColor: "#f59e0b22" }]}>
+                  <Text style={[f.chipText, { color: "#d97706" }]}>{g}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        <Text style={[f.label, { color: theme.textMuted }]}>評価</Text>
         <StarRating value={rating} onChange={setRating} size={28} />
-        <Text style={f.label}>メモ</Text>
-        <TextInput style={[f.input, { height: 80 }]} value={memo} onChangeText={setMemo} multiline />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>タグ</Text>
+        <View style={f.metaRow}>
+          <TextInput style={[f.input, { flex: 1, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={tagInput} onChangeText={setTagInput}
+            placeholder="タグを入力" placeholderTextColor={theme.placeholder}
+            onSubmitEditing={addTag} returnKeyType="done" />
+          <Pressable style={[f.actionBtn, { backgroundColor: accent }]} onPress={addTag}>
+            <Plus size={16} color="#fff" />
+          </Pressable>
+        </View>
+        {tags.length > 0 && (
+          <View style={f.chipRow}>
+            {tags.map((tag) => (
+              <Pressable key={tag} style={[f.tagChip, { backgroundColor: theme.borderLight }]} onPress={() => setTags(tags.filter((t) => t !== tag))}>
+                <Text style={[f.tagText, { color: theme.textSub }]}>{tag}</Text>
+                <X size={12} color={theme.textSub} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        <Text style={[f.label, { color: theme.textMuted }]}>メモ</Text>
+        <TextInput style={[f.input, { height: 80, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={memo} onChangeText={setMemo} multiline
+          textAlignVertical="top" />
 
         {initial && (
-          <Pressable style={f.deleteBtn} onPress={del}>
-            <Text style={f.deleteBtnText}>削除</Text>
+          <Pressable style={[f.deleteBtn, { backgroundColor: theme.destructive + "20" }]} onPress={del}>
+            <Text style={[f.deleteBtnText, { color: theme.destructive }]}>削除</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -238,39 +454,41 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F5F0E8" },
-  toolbar: { flexDirection: "row", padding: 12, gap: 8, alignItems: "center" },
-  searchRow: { flex: 1, position: "relative" },
-  searchInput: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 10, paddingLeft: 32, paddingRight: 12, paddingVertical: 8, fontSize: 14 },
-  addBtn: { backgroundColor: "#111827", borderRadius: 10, padding: 10 },
+  container: { flex: 1 },
+  header: { flexDirection: "row", paddingHorizontal: 12, paddingBottom: 8, gap: 8, alignItems: "center" },
+  searchRow: { flex: 1, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, gap: 6 },
+  searchInput: { flex: 1, paddingVertical: 9, fontSize: 14 },
+  iconBtn: { borderRadius: 10, padding: 10 },
   filterRow: { flexGrow: 0, marginBottom: 4 },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "#E5E7EB" },
-  filterChipActive: { backgroundColor: "#111827" },
-  filterChipText: { fontSize: 13, color: "#374151" },
-  filterChipTextActive: { color: "#fff" },
-  card: { flexDirection: "row", gap: 12, backgroundColor: "#fff", borderRadius: 12, padding: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  cardSub: { fontSize: 12, color: "#6B7280" },
-  empty: { textAlign: "center", color: "#9CA3AF", marginTop: 40 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  filterChipText: { fontSize: 13 },
+  card: { flexDirection: "row", gap: 12, borderRadius: 12, padding: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  cardTitle: { fontSize: 14, fontWeight: "600" },
+  cardSub: { fontSize: 12 },
+  empty: { textAlign: "center", marginTop: 40 },
+  seriesRow: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 12, borderWidth: 1 },
+  seriesTitle: { fontSize: 14, fontWeight: "600" },
+  seriesCount: { fontSize: 12 },
 });
 
 const f = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottomWidth: 1, borderBottomColor: "#E5E7EB", backgroundColor: "#fff" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, paddingTop: 20, borderBottomWidth: 1 },
   headerTitle: { fontSize: 16, fontWeight: "600" },
-  saveText: { color: "#2563EB", fontWeight: "600", fontSize: 15 },
-  sectionTitle: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
-  label: { fontSize: 13, color: "#6B7280" },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#D1D5DB", borderRadius: 10, padding: 12, fontSize: 14 },
+  saveText: { fontWeight: "600", fontSize: 15 },
+  sectionTitle: { fontSize: 13, fontWeight: "600" },
+  label: { fontSize: 13, marginBottom: -8 },
+  input: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 14 },
   metaRow: { flexDirection: "row", gap: 8 },
-  searchBtn: { backgroundColor: "#2563EB", borderRadius: 10, padding: 12, alignItems: "center", justifyContent: "center" },
-  metaList: { borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: "#E5E7EB" },
-  metaItem: { flexDirection: "row", gap: 10, padding: 10, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F3F4F6", alignItems: "center" },
-  metaTitle: { flex: 1, fontSize: 13, fontWeight: "500" },
-  statusRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  statusChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: "#E5E7EB" },
-  statusChipActive: { backgroundColor: "#111827" },
-  statusChipText: { fontSize: 13, color: "#374151" },
-  statusChipTextActive: { color: "#fff" },
-  deleteBtn: { marginTop: 8, backgroundColor: "#FEE2E2", borderRadius: 10, padding: 12, alignItems: "center" },
-  deleteBtnText: { color: "#B91C1C", fontWeight: "600" },
+  actionBtn: { borderRadius: 10, padding: 12, alignItems: "center", justifyContent: "center" },
+  metaList: { borderRadius: 10, overflow: "hidden", borderWidth: 1 },
+  metaItem: { flexDirection: "row", gap: 10, padding: 10, borderBottomWidth: 1 },
+  metaTitle: { fontSize: 13, fontWeight: "500" },
+  metaSub: { fontSize: 12 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  chipText: { fontSize: 13 },
+  tagChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
+  tagText: { fontSize: 12 },
+  deleteBtn: { marginTop: 8, borderRadius: 10, padding: 14, alignItems: "center" },
+  deleteBtnText: { fontWeight: "600" },
 });
