@@ -37,15 +37,19 @@ jobs:
 
       - name: Generate debug keystore for signing
         run: |
-          keytool -genkeypair -v \
-            -keystore apps/mobile/android/app/debug.keystore \
-            -alias androiddebugkey \
-            -keypass android \
-            -storepass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+          if [ ! -f apps/mobile/android/app/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore apps/mobile/android/app/debug.keystore \
+              -alias androiddebugkey \
+              -keypass android \
+              -storepass android \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          else
+            echo "debug.keystore already exists, skipping generation"
+          fi
 
       - name: Build release APK
         working-directory: apps/mobile/android
