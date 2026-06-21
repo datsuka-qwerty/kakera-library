@@ -35,18 +35,30 @@ jobs:
           echo "--- patch result ---"
           grep -n "components" "$FILE"
 
-      - name: Build debug APK
+      - name: Generate debug keystore for signing
+        run: |
+          keytool -genkeypair -v \
+            -keystore apps/mobile/android/app/debug.keystore \
+            -alias androiddebugkey \
+            -keypass android \
+            -storepass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Build release APK
         working-directory: apps/mobile/android
         env:
           NODE_PATH: ${{ github.workspace }}/apps/mobile/node_modules
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Rename APK with version tag
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk \
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
              kakera-library-${TAG}-android.apk
 
       - name: Upload APK to release
