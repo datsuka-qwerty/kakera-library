@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Settings, ChevronLeft, ChevronRight } from "lucide-react-native";
@@ -36,6 +36,7 @@ export default function DashboardScreen() {
   const [month, setMonth] = useState(THIS_MONTH);
   const [stats, setStats] = useState<DashStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const filter: DashboardFilter = period === "all" ? { period: "all" }
     : period === "yearly" ? { period: "yearly", year }
@@ -47,9 +48,10 @@ export default function DashboardScreen() {
     try {
       const data = await dashboardApi.getStats(filter);
       setStats(data);
+      setLoadError(false);
     } catch (e: any) {
       if (e?.response?.status !== 401 && useAuthStore.getState().accessToken) {
-        Alert.alert("エラー", "統計の読み込みに失敗しました");
+        setLoadError(true);
       }
     } finally {
       setLoading(false);
@@ -145,6 +147,14 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
+      {loadError && !loading && (
+        <View style={[s.errorBanner, { backgroundColor: theme.card, borderColor: "#EF4444" }]}>
+          <Text style={[s.errorText, { color: "#EF4444" }]}>サーバーに接続できません</Text>
+          <Pressable onPress={load} style={s.retryBtn}>
+            <Text style={[s.retryText, { color: accent }]}>再試行</Text>
+          </Pressable>
+        </View>
+      )}
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={accent} />
       ) : (
@@ -236,4 +246,8 @@ const s = StyleSheet.create({
   genreRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   genreLabel: { fontSize: 12, flex: 1, marginRight: 8 },
   genreCount: { fontSize: 12, fontWeight: "500" },
+  errorBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 16, marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  errorText: { fontSize: 13 },
+  retryBtn: { paddingHorizontal: 8, paddingVertical: 2 },
+  retryText: { fontSize: 13, fontWeight: "600" },
 });

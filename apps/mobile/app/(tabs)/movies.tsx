@@ -33,6 +33,7 @@ export default function MoviesScreen() {
   const [editing, setEditing] = useState<Movie | null>(null);
   const [groupBySeries, setGroupBySeries] = useState(true);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
+  const [loadError, setLoadError] = useState(false);
 
   const seriesGroups = useMemo(() => {
     const groups = new Map<string, Movie[]>();
@@ -57,8 +58,9 @@ export default function MoviesScreen() {
     try {
       const res = await moviesApi.list({ search, status, perPage: 100 });
       setMovies(res.data);
+      setLoadError(false);
     } catch {
-      Alert.alert("エラー", "読み込みに失敗しました");
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -106,6 +108,14 @@ export default function MoviesScreen() {
         ))}
       </ScrollView>
 
+      {loadError && !loading && (
+        <View style={[s.errorBanner, { backgroundColor: theme.card, borderColor: "#EF4444" }]}>
+          <Text style={[s.errorText, { color: "#EF4444" }]}>サーバーに接続できません</Text>
+          <Pressable onPress={load} style={s.retryBtn}>
+            <Text style={[s.retryText, { color: accent }]}>再試行</Text>
+          </Pressable>
+        </View>
+      )}
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={accent} />
       ) : groupBySeries ? (
@@ -453,6 +463,10 @@ const s = StyleSheet.create({
   seriesRow: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 12, borderWidth: 1 },
   seriesTitle: { fontSize: 14, fontWeight: "600" },
   seriesCount: { fontSize: 12 },
+  errorBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginHorizontal: 12, marginBottom: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  errorText: { fontSize: 13 },
+  retryBtn: { paddingHorizontal: 8, paddingVertical: 2 },
+  retryText: { fontSize: 13, fontWeight: "600" },
 });
 
 const f = StyleSheet.create({
