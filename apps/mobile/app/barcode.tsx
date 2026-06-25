@@ -3,11 +3,13 @@ import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator, ScrollView
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
 import { X, CheckCircle, ArrowRight, Trash2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { booksApi } from "../lib/api";
 import { useBarcodeStore } from "../store/barcodeStore";
 import { useAccent } from "../lib/theme";
 
 export default function BarcodeScreen() {
+  const { t } = useTranslation();
   const accent = useAccent();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
@@ -15,7 +17,6 @@ export default function BarcodeScreen() {
   const { scannedBooks, addBook, removeBook, clear } = useBarcodeStore();
 
   useEffect(() => {
-    // Clear previous session on mount
     clear();
   }, []);
 
@@ -71,7 +72,7 @@ export default function BarcodeScreen() {
 
   const goToRegister = () => {
     if (scannedBooks.length === 0) {
-      Alert.alert("書籍がありません", "先にバーコードをスキャンしてください");
+      Alert.alert(t("barcode.noBooks"), t("barcode.noBooksHint"));
       return;
     }
     router.push("/barcode-batch");
@@ -84,9 +85,9 @@ export default function BarcodeScreen() {
   if (!permission.granted) {
     return (
       <View style={s.container}>
-        <Text style={s.permText}>カメラへのアクセスが必要です</Text>
+        <Text style={s.permText}>{t("barcode.permText")}</Text>
         <Pressable style={[s.btn, { backgroundColor: accent }]} onPress={requestPermission}>
-          <Text style={s.btnText}>許可する</Text>
+          <Text style={s.btnText}>{t("barcode.allow")}</Text>
         </Pressable>
       </View>
     );
@@ -103,30 +104,26 @@ export default function BarcodeScreen() {
         onBarcodeScanned={handleBarCodeScanned}
       />
 
-      {/* Overlay */}
       <View style={s.overlay} pointerEvents="box-none">
-        {/* Top bar */}
         <View style={s.topBar}>
           <Pressable style={s.closeBtn} onPress={() => { clear(); router.back(); }}>
             <X size={24} color="#fff" />
           </Pressable>
-          <Text style={s.scanLabel}>連続スキャン</Text>
+          <Text style={s.scanLabel}>{t("barcode.scanLabel")}</Text>
           <View style={{ width: 40 }} />
         </View>
 
-        {/* Scan frame */}
         <View style={s.frameArea}>
           <View style={s.frame} />
-          <Text style={s.hint}>バーコードをフレームに合わせてください</Text>
+          <Text style={s.hint}>{t("barcode.hint")}</Text>
           {totalPending > 0 && (
             <View style={s.fetchingBadge}>
               <ActivityIndicator color="#fff" size="small" />
-              <Text style={s.fetchingText}>書籍情報を取得中...</Text>
+              <Text style={s.fetchingText}>{t("barcode.fetching")}</Text>
             </View>
           )}
         </View>
 
-        {/* Bottom panel */}
         <View style={s.bottomPanel} pointerEvents="box-none">
           {scannedBooks.length > 0 && (
             <ScrollView style={s.scannedList} keyboardShouldPersistTaps="handled">
@@ -144,13 +141,13 @@ export default function BarcodeScreen() {
 
           <View style={s.bottomActions}>
             <Text style={s.countText}>
-              {scannedBooks.length}冊スキャン済み
+              {t("barcode.scanned", { n: scannedBooks.length })}
             </Text>
             <Pressable
               style={[s.registerBtn, { backgroundColor: accent }, scannedBooks.length === 0 && s.registerBtnDisabled]}
               onPress={goToRegister}
             >
-              <Text style={s.registerBtnText}>登録へ進む</Text>
+              <Text style={s.registerBtnText}>{t("barcode.proceed")}</Text>
               <ArrowRight size={18} color="#fff" />
             </Pressable>
           </View>

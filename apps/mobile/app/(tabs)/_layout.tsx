@@ -1,8 +1,10 @@
 import { Tabs } from "expo-router";
 import { LayoutDashboard, BookOpen, Film, Tv } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { useTheme, useAccent } from "../../lib/theme";
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const accent = useAccent();
 
@@ -24,28 +26,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "ホーム",
+          title: t("tabs.home"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <LayoutDashboard color={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen
         name="books"
         options={{
-          title: "本",
+          title: t("tabs.books"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <BookOpen color={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen
         name="movies"
         options={{
-          title: "映画",
+          title: t("tabs.movies"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <Film color={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen
         name="dramas"
         options={{
-          title: "ドラマ",
+          title: t("tabs.dramas"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <Tv color={color} size={size - 2} />,
         }}
       />

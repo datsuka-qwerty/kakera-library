@@ -6,6 +6,7 @@ import {
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, ChevronDown, ChevronUp, Plus } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { booksApi, mediaTypesApi } from "../lib/api";
 import type { BookStatus } from "@kakera/shared";
 import CoverImage from "../components/ui/CoverImage";
@@ -13,14 +14,10 @@ import StarRating from "../components/ui/StarRating";
 import { useBarcodeStore } from "../store/barcodeStore";
 import { useAccent } from "../lib/theme";
 
-const STATUSES: { value: BookStatus; label: string }[] = [
-  { value: "want_to_read", label: "読みたい" },
-  { value: "reading", label: "読書中" },
-  { value: "completed", label: "読了" },
-  { value: "on_hold", label: "積読" },
-];
+const BOOK_STATUS_VALUES: BookStatus[] = ["want_to_read", "reading", "completed", "on_hold"];
 
 export default function BarcodeBatchScreen() {
+  const { t } = useTranslation();
   const accent = useAccent();
   const insets = useSafeAreaInsets();
   const { scannedBooks, updateBook, removeBook, clear } = useBarcodeStore();
@@ -62,9 +59,9 @@ export default function BarcodeBatchScreen() {
     }
     setSaving(false);
     if (errors.length > 0) {
-      Alert.alert("一部失敗", `以下の書籍の登録に失敗しました:\n${errors.join("\n")}`);
+      Alert.alert(t("barcode.partialFail"), t("barcode.partialFailMsg", { books: errors.join("\n") }));
     } else {
-      Alert.alert("登録完了", `${scannedBooks.length}冊を登録しました`, [
+      Alert.alert(t("barcode.completed"), t("barcode.completedMsg", { n: scannedBooks.length }), [
         { text: "OK", onPress: () => { clear(); router.back(); router.back(); } },
       ]);
     }
@@ -82,7 +79,7 @@ export default function BarcodeBatchScreen() {
   const removeTag = (isbn: string, tag: string) => {
     const book = scannedBooks.find((b) => b.isbn === isbn);
     if (!book) return;
-    updateBook(isbn, { tags: book.tags.filter((t) => t !== tag) });
+    updateBook(isbn, { tags: book.tags.filter((tg) => tg !== tag) });
   };
 
   const toggleMediaType = (isbn: string, name: string) => {
@@ -98,9 +95,9 @@ export default function BarcodeBatchScreen() {
   if (scannedBooks.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: "#F5F0E8", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: "#6B7280" }}>スキャンされた書籍がありません</Text>
+        <Text style={{ color: "#6B7280" }}>{t("barcode.noScanned")}</Text>
         <Pressable style={[s.doneBtn, { backgroundColor: accent, marginTop: 16 }]} onPress={() => router.back()}>
-          <Text style={s.doneBtnText}>戻る</Text>
+          <Text style={s.doneBtnText}>{t("barcode.back")}</Text>
         </Pressable>
       </View>
     );
@@ -110,16 +107,18 @@ export default function BarcodeBatchScreen() {
     <View style={{ flex: 1, backgroundColor: "#F5F0E8" }}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()}><X size={22} color="#374151" /></Pressable>
-        <Text style={s.headerTitle}>まとめ登録（{scannedBooks.length}冊）</Text>
+        <Text style={s.headerTitle}>{t("barcode.batchTitle", { n: scannedBooks.length })}</Text>
         <Pressable onPress={saveAll} disabled={saving}>
-          <Text style={[s.saveText, { color: accent }]}>{saving ? "登録中..." : "すべて登録"}</Text>
+          <Text style={[s.saveText, { color: accent }]}>
+            {saving ? t("barcode.registering") : t("barcode.registerAll")}
+          </Text>
         </Pressable>
       </View>
 
       {saving && (
         <View style={s.savingOverlay}>
           <ActivityIndicator color={accent} size="large" />
-          <Text style={s.savingText}>登録中...</Text>
+          <Text style={s.savingText}>{t("barcode.registering")}</Text>
         </View>
       )}
 
@@ -128,7 +127,6 @@ export default function BarcodeBatchScreen() {
           const expanded = expandedIsbn === book.isbn;
           return (
             <View key={book.isbn} style={s.card}>
-              {/* Header row */}
               <Pressable style={s.cardHeader} onPress={() => setExpandedIsbn(expanded ? null : book.isbn)}>
                 <CoverImage src={book.coverImageUrl} width={44} height={60} />
                 <View style={{ flex: 1 }}>
@@ -137,7 +135,7 @@ export default function BarcodeBatchScreen() {
                     <Text style={s.bookSub} numberOfLines={1}>{book.authors.join(", ")}</Text>
                   )}
                   <Text style={[s.statusLabel, { color: accent }]}>
-                    {STATUSES.find((st) => st.value === book.status)?.label ?? book.status}
+                    {t(`status.${book.status}`, { defaultValue: book.status })}
                     {book.rating != null ? `  ★${book.rating}` : ""}
                   </Text>
                 </View>
@@ -149,25 +147,26 @@ export default function BarcodeBatchScreen() {
                 </View>
               </Pressable>
 
-              {/* Expanded form */}
               {expanded && (
                 <View style={s.expandedForm}>
-                  <Text style={f.label}>ステータス</Text>
+                  <Text style={f.label}>{t("content.fieldStatus")}</Text>
                   <View style={f.chipRow}>
-                    {STATUSES.map((st) => (
+                    {BOOK_STATUS_VALUES.map((sv) => (
                       <Pressable
-                        key={st.value}
-                        style={[f.chip, book.status === st.value && { backgroundColor: accent }]}
-                        onPress={() => updateBook(book.isbn, { status: st.value })}
+                        key={sv}
+                        style={[f.chip, book.status === sv && { backgroundColor: accent }]}
+                        onPress={() => updateBook(book.isbn, { status: sv })}
                       >
-                        <Text style={[f.chipText, book.status === st.value && { color: "#fff" }]}>{st.label}</Text>
+                        <Text style={[f.chipText, book.status === sv && { color: "#fff" }]}>
+                          {t(`status.${sv}`)}
+                        </Text>
                       </Pressable>
                     ))}
                   </View>
 
                   {availableMediaTypes.length > 0 && (
                     <>
-                      <Text style={f.label}>メディア種別</Text>
+                      <Text style={f.label}>{t("content.fieldMediaTypes")}</Text>
                       <View style={f.chipRow}>
                         {availableMediaTypes.map((m) => (
                           <Pressable
@@ -182,20 +181,20 @@ export default function BarcodeBatchScreen() {
                     </>
                   )}
 
-                  <Text style={f.label}>評価</Text>
+                  <Text style={f.label}>{t("content.fieldRating")}</Text>
                   <StarRating
                     value={book.rating}
                     onChange={(v) => updateBook(book.isbn, { rating: v })}
                     size={26}
                   />
 
-                  <Text style={f.label}>タグ</Text>
+                  <Text style={f.label}>{t("content.fieldTags")}</Text>
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <TextInput
                       style={[f.input, { flex: 1 }]}
                       value={tagInputs[book.isbn] ?? ""}
                       onChangeText={(v) => setTagInputs((prev) => ({ ...prev, [book.isbn]: v }))}
-                      placeholder="タグを入力"
+                      placeholder={t("content.tagPlaceholder")}
                       placeholderTextColor="#9CA3AF"
                       onSubmitEditing={() => addTag(book.isbn)}
                       returnKeyType="done"
@@ -215,14 +214,14 @@ export default function BarcodeBatchScreen() {
                     </View>
                   )}
 
-                  <Text style={f.label}>メモ</Text>
+                  <Text style={f.label}>{t("content.fieldMemo")}</Text>
                   <TextInput
                     style={[f.input, { height: 64 }]}
                     value={book.memo}
                     onChangeText={(v) => updateBook(book.isbn, { memo: v })}
                     multiline
                     textAlignVertical="top"
-                    placeholder="メモを入力"
+                    placeholder={t("content.memoPlaceholder")}
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
@@ -232,7 +231,9 @@ export default function BarcodeBatchScreen() {
         })}
 
         <Pressable style={[s.doneBtn, { backgroundColor: accent }]} onPress={saveAll} disabled={saving}>
-          <Text style={s.doneBtnText}>{saving ? "登録中..." : `${scannedBooks.length}冊をすべて登録`}</Text>
+          <Text style={s.doneBtnText}>
+            {saving ? t("barcode.registering") : t("barcode.registerBtn", { n: scannedBooks.length })}
+          </Text>
         </Pressable>
       </ScrollView>
     </View>

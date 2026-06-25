@@ -10,6 +10,7 @@ import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, LogOut } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { api } from "../lib/apiClient";
 import { mediaTypesApi, exportImportApi, serverSettingsApi } from "../lib/api";
@@ -26,6 +27,7 @@ interface ReceivedShares { dashboardOwners: ShareTarget[]; ratingSharers: ShareT
 type TabKey = "profile" | "sharing" | "mediaTypes" | "data" | "appearance" | "server";
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const { user, clearAuth } = useAuthStore();
   const theme = useTheme();
   const accent = useAccent();
@@ -33,22 +35,22 @@ export default function SettingsScreen() {
   const [tab, setTab] = useState<TabKey>("profile");
 
   const logout = () => {
-    Alert.alert("ログアウト", "ログアウトしますか？", [
-      { text: "キャンセル", style: "cancel" },
-      { text: "ログアウト", style: "destructive", onPress: () => { clearAuth(); router.replace("/login"); } },
+    Alert.alert(t("common.logout"), t("common.logoutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.logout"), style: "destructive", onPress: () => { clearAuth(); router.replace("/login"); } },
     ]);
   };
 
   const adminTabs: { key: TabKey; label: string }[] = user?.role === "admin"
-    ? [{ key: "server", label: "サーバー" }]
+    ? [{ key: "server", label: t("settings.server") }]
     : [];
 
   const TABS: { key: TabKey; label: string }[] = [
-    { key: "profile", label: "プロフィール" },
-    { key: "sharing", label: "共有" },
-    { key: "mediaTypes", label: "メディア" },
-    { key: "data", label: "データ" },
-    { key: "appearance", label: "外観" },
+    { key: "profile", label: t("settings.profile") },
+    { key: "sharing", label: t("settings.sharing") },
+    { key: "mediaTypes", label: t("settings.media") },
+    { key: "data", label: t("settings.data") },
+    { key: "appearance", label: t("settings.appearance") },
     ...adminTabs,
   ];
 
@@ -56,20 +58,20 @@ export default function SettingsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <View style={[s.header, { paddingTop: insets.top + 8, backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
         <Pressable onPress={() => router.back()}><X size={22} color={theme.textSub} /></Pressable>
-        <Text style={[s.headerTitle, { color: theme.text }]}>設定</Text>
+        <Text style={[s.headerTitle, { color: theme.text }]}>{t("settings.title")}</Text>
         <Pressable onPress={logout}><LogOut size={22} color={theme.destructive} /></Pressable>
       </View>
 
       <View style={[s.tabBar, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
-        {TABS.map((t) => (
-          <Pressable key={t.key} style={[s.tab, tab === t.key && [s.tabActive, { borderBottomColor: accent }]]}
-            onPress={() => setTab(t.key)}>
+        {TABS.map((tb) => (
+          <Pressable key={tb.key} style={[s.tab, tab === tb.key && [s.tabActive, { borderBottomColor: accent }]]}
+            onPress={() => setTab(tb.key)}>
             <Text
-              style={[s.tabText, { color: theme.textMuted }, tab === t.key && { color: accent, fontWeight: "600" }]}
+              style={[s.tabText, { color: theme.textMuted }, tab === tb.key && { color: accent, fontWeight: "600" }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {t.label}
+              {tb.label}
             </Text>
           </Pressable>
         ))}
@@ -86,6 +88,7 @@ export default function SettingsScreen() {
 }
 
 function ProfileTab({ user }: { user: { username: string } | null }) {
+  const { t } = useTranslation();
   const { setAuth, accessToken, refreshToken } = useAuthStore();
   const theme = useTheme();
   const accent = useAccent();
@@ -102,10 +105,10 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
         password: password || undefined,
       });
       setAuth(accessToken!, refreshToken!, res);
-      Alert.alert("保存しました");
+      Alert.alert(t("profile.saved"));
       setPassword("");
     } catch {
-      Alert.alert("エラー", "保存に失敗しました");
+      Alert.alert(t("common.error"), t("profile.error"));
     } finally {
       setSaving(false);
     }
@@ -118,18 +121,18 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
   };
 
   const langs: { code: "ja" | "en"; label: string; sublabel: string }[] = [
-    { code: "ja", label: "日本語", sublabel: "Japanese" },
-    { code: "en", label: "English", sublabel: "英語" },
+    { code: "ja", label: t("language.japanese"), sublabel: "Japanese" },
+    { code: "en", label: t("language.english"), sublabel: "英語" },
   ];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-      <Text style={[f.sectionHeader, { color: theme.text }]}>アカウント</Text>
-      <Text style={[f.label, { color: theme.textMuted }]}>新しいパスワード（変更する場合のみ）</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("profile.account")}</Text>
+      <Text style={[f.label, { color: theme.textMuted }]}>{t("profile.newPassword")}</Text>
       <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
         value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={theme.placeholder} />
       <Pressable style={[f.btn, { backgroundColor: accent }, saving && f.btnDisabled]} onPress={save} disabled={saving}>
-        <Text style={[f.btnText, { color: theme.accentFg }]}>{saving ? "保存中..." : "保存"}</Text>
+        <Text style={[f.btnText, { color: theme.accentFg }]}>{saving ? t("profile.saving") : t("profile.save")}</Text>
       </Pressable>
 
       <View style={[f.divider, { borderTopColor: theme.border }]} />
@@ -156,17 +159,18 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
         onPress={applyLanguage}
         disabled={selectedLang === language}
       >
-        <Text style={[f.btnText, { color: theme.accentFg }]}>言語を適用</Text>
+        <Text style={[f.btnText, { color: theme.accentFg }]}>{t("profile.applyLanguage")}</Text>
       </Pressable>
-      {langSaved && <Text style={{ fontSize: 13, color: "#16A34A", textAlign: "center" }}>言語を変更しました</Text>}
+      {langSaved && <Text style={{ fontSize: 13, color: "#16A34A", textAlign: "center" }}>{t("profile.languageChanged")}</Text>}
       <Text style={[f.description, { color: theme.textMuted, lineHeight: 18 }]}>
-        Androidの設定 → アプリ → 言語 から、アプリごとに言語を設定することもできます。
+        {t("profile.langHint")}
       </Text>
     </ScrollView>
   );
 }
 
 function SharingTab() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const accent = useAccent();
   const [dashShares, setDashShares] = useState<ShareTarget[]>([]);
@@ -191,7 +195,7 @@ function SharingTab() {
       setReceived(rec && rec.dashboardOwners ? rec : { dashboardOwners: [], ratingSharers: [] });
       setAllUsers(Array.isArray(users) ? users : []);
     } catch {
-      Alert.alert("エラー", "共有設定の読み込みに失敗しました");
+      Alert.alert(t("common.error"), t("sharing.loadError"));
     } finally {
       setLoading(false);
     }
@@ -203,24 +207,24 @@ function SharingTab() {
     try {
       await api.delete(`/sharing/dashboard/${userId}`);
       setDashShares((prev) => prev.filter((d) => d.userId !== userId));
-    } catch { Alert.alert("エラー", "削除に失敗しました"); }
+    } catch { Alert.alert(t("common.error"), t("sharing.removeFailed")); }
   };
 
   const removeRating = async (toUserId: string) => {
     try {
       await api.delete(`/sharing/ratings/${toUserId}`);
       setRatingShares((prev) => prev.filter((r) => r.toUserId !== toUserId));
-    } catch { Alert.alert("エラー", "削除に失敗しました"); }
+    } catch { Alert.alert(t("common.error"), t("sharing.removeFailed")); }
   };
 
   const addDashShare = async (userId: string) => {
     try { await api.post(`/sharing/dashboard/${userId}`, {}); await load(); }
-    catch { Alert.alert("エラー", "追加に失敗しました"); }
+    catch { Alert.alert(t("common.error"), t("sharing.addFailed")); }
   };
 
   const addRatingShare = async (userId: string) => {
     try { await api.post(`/sharing/ratings/${userId}`, { enabled: true }); await load(); }
-    catch { Alert.alert("エラー", "追加に失敗しました"); }
+    catch { Alert.alert(t("common.error"), t("sharing.addFailed")); }
   };
 
   const filteredUsers = search.trim()
@@ -231,39 +235,39 @@ function SharingTab() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-      <Text style={[f.sectionHeader, { color: theme.text }]}>あなたが共有しているユーザー</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("sharing.outgoing")}</Text>
 
       <View style={[f.card, { backgroundColor: theme.card }]}>
-        <Text style={[f.subsection, { color: theme.textSub }]}>ダッシュボード</Text>
+        <Text style={[f.subsection, { color: theme.textSub }]}>{t("sharing.dashboard")}</Text>
         {dashShares.length === 0 ? (
-          <Text style={[f.empty, { color: theme.textMuted }]}>共有していません</Text>
+          <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.noSharing")}</Text>
         ) : dashShares.map((d) => (
           <View key={d.userId} style={[f.shareRow, { borderTopColor: theme.borderLight }]}>
             <Text style={[f.shareUser, { flex: 1, color: theme.text }]}>{d.username}</Text>
             <Pressable onPress={() => removeDash(d.userId)}>
-              <Text style={[f.deleteText, { color: theme.destructive }]}>削除</Text>
+              <Text style={[f.deleteText, { color: theme.destructive }]}>{t("sharing.delete")}</Text>
             </Pressable>
           </View>
         ))}
       </View>
 
       <View style={[f.card, { backgroundColor: theme.card }]}>
-        <Text style={[f.subsection, { color: theme.textSub }]}>評価</Text>
-        <Text style={[f.description, { color: theme.textMuted }]}>ONにすると相手があなたの評価を閲覧できます</Text>
+        <Text style={[f.subsection, { color: theme.textSub }]}>{t("sharing.rating")}</Text>
+        <Text style={[f.description, { color: theme.textMuted }]}>{t("sharing.ratingDesc")}</Text>
         {ratingShares.length === 0 ? (
-          <Text style={[f.empty, { color: theme.textMuted }]}>共有していません</Text>
+          <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.noSharing")}</Text>
         ) : ratingShares.map((r) => (
           <View key={r.toUserId} style={[f.shareRow, { borderTopColor: theme.borderLight }]}>
             <Text style={[f.shareUser, { flex: 1, color: theme.text }]}>{r.toUsername}</Text>
             <Pressable onPress={() => removeRating(r.toUserId)}>
-              <Text style={[f.deleteText, { color: theme.destructive }]}>削除</Text>
+              <Text style={[f.deleteText, { color: theme.destructive }]}>{t("sharing.delete")}</Text>
             </Pressable>
           </View>
         ))}
       </View>
 
       <Pressable style={[f.btn, { backgroundColor: accent }]} onPress={() => { setShowAdd(!showAdd); setSearch(""); }}>
-        <Text style={[f.btnText, { color: theme.accentFg }]}>{showAdd ? "キャンセル" : "+ ユーザーを追加"}</Text>
+        <Text style={[f.btnText, { color: theme.accentFg }]}>{showAdd ? t("common.cancel") : t("sharing.addUsers")}</Text>
       </Pressable>
 
       {showAdd && (
@@ -271,12 +275,12 @@ function SharingTab() {
           <TextInput
             style={[f.input, { marginBottom: 8, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
             value={search} onChangeText={setSearch}
-            placeholder="ユーザー名を入力..." placeholderTextColor={theme.placeholder}
+            placeholder={t("sharing.searchPlaceholder")} placeholderTextColor={theme.placeholder}
           />
           {!search.trim() ? (
-            <Text style={[f.empty, { color: theme.textMuted }]}>ユーザー名を入力して検索してください</Text>
+            <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.searchHint")}</Text>
           ) : filteredUsers.length === 0 ? (
-            <Text style={[f.empty, { color: theme.textMuted }]}>ユーザーが見つかりません</Text>
+            <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.noUser")}</Text>
           ) : filteredUsers.map((u) => {
             const hasDash = dashShares.some((d) => d.userId === u.userId);
             const hasRating = ratingShares.some((r) => r.toUserId === u.userId);
@@ -285,11 +289,11 @@ function SharingTab() {
                 <Text style={[f.shareUser, { flex: 1, color: theme.text }]}>{u.username}</Text>
                 <Pressable style={[f.miniBtn, { backgroundColor: hasDash ? accent : theme.borderLight }]}
                   onPress={() => !hasDash && addDashShare(u.userId)} disabled={hasDash}>
-                  <Text style={[f.miniBtnText, { color: hasDash ? theme.accentFg : theme.textSub }]}>ダッシュ</Text>
+                  <Text style={[f.miniBtnText, { color: hasDash ? theme.accentFg : theme.textSub }]}>{t("sharing.dashShort")}</Text>
                 </Pressable>
                 <Pressable style={[f.miniBtn, { backgroundColor: hasRating ? accent : theme.borderLight }]}
                   onPress={() => !hasRating && addRatingShare(u.userId)} disabled={hasRating}>
-                  <Text style={[f.miniBtnText, { color: hasRating ? theme.accentFg : theme.textSub }]}>評価</Text>
+                  <Text style={[f.miniBtnText, { color: hasRating ? theme.accentFg : theme.textSub }]}>{t("sharing.rating")}</Text>
                 </Pressable>
               </View>
             );
@@ -298,11 +302,11 @@ function SharingTab() {
       )}
 
       <View style={[{ borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 16 }]}>
-        <Text style={[f.sectionHeader, { color: theme.text }]}>あなたへの共有</Text>
+        <Text style={[f.sectionHeader, { color: theme.text }]}>{t("sharing.incoming")}</Text>
         <View style={[f.card, { backgroundColor: theme.card, marginTop: 12 }]}>
-          <Text style={[f.subsection, { color: theme.textSub }]}>ダッシュボード</Text>
+          <Text style={[f.subsection, { color: theme.textSub }]}>{t("sharing.dashboard")}</Text>
           {received.dashboardOwners.length === 0 ? (
-            <Text style={[f.empty, { color: theme.textMuted }]}>共有されていません</Text>
+            <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.notShared")}</Text>
           ) : received.dashboardOwners.map((o) => (
             <Pressable
               key={o.userId}
@@ -310,14 +314,14 @@ function SharingTab() {
               onPress={() => router.push(`/shared-dashboard?username=${encodeURIComponent(o.username)}`)}
             >
               <Text style={[f.shareUser, { flex: 1, color: theme.text }]}>{o.username}</Text>
-              <Text style={[f.viewLink, { color: accent }]}>ダッシュボードを見る →</Text>
+              <Text style={[f.viewLink, { color: accent }]}>{t("sharing.viewDashboard")}</Text>
             </Pressable>
           ))}
         </View>
         <View style={[f.card, { backgroundColor: theme.card, marginTop: 12 }]}>
-          <Text style={[f.subsection, { color: theme.textSub }]}>評価</Text>
+          <Text style={[f.subsection, { color: theme.textSub }]}>{t("sharing.rating")}</Text>
           {received.ratingSharers.length === 0 ? (
-            <Text style={[f.empty, { color: theme.textMuted }]}>共有されていません</Text>
+            <Text style={[f.empty, { color: theme.textMuted }]}>{t("sharing.notShared")}</Text>
           ) : received.ratingSharers.map((r) => (
             <View key={r.userId} style={[f.shareRow, { borderTopColor: theme.borderLight }]}>
               <Text style={[f.shareUser, { color: theme.text }]}>{r.username}</Text>
@@ -330,6 +334,7 @@ function SharingTab() {
 }
 
 function MediaTypesTab() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const accent = useAccent();
   const [items, setItems] = useState<{ id: string; category: string; name: string; isDefault: boolean; key?: string }[]>([]);
@@ -341,43 +346,45 @@ function MediaTypesTab() {
   const load = async () => {
     setLoading(true);
     try { const res = await mediaTypesApi.list(); setItems(res); }
-    catch { Alert.alert("エラー", "読み込みに失敗しました"); }
+    catch { Alert.alert(t("common.error"), t("media.loadFailed")); }
     finally { setLoading(false); }
   };
 
   const add = async () => {
     if (!newName.trim()) return;
     try { await mediaTypesApi.create(newCategory, newName.trim()); setNewName(""); load(); }
-    catch { Alert.alert("エラー", "追加に失敗しました"); }
+    catch { Alert.alert(t("common.error"), t("media.addFailed")); }
   };
 
   const del = async (id: string) => {
     try { await mediaTypesApi.delete(id); load(); }
-    catch { Alert.alert("エラー", "削除に失敗しました"); }
+    catch { Alert.alert(t("common.error"), t("media.deleteFailed")); }
   };
 
   useEffect(() => { load(); }, []);
 
   const categories = ["book", "movie", "drama"] as const;
-  const catLabel = { book: "書籍", movie: "映画", drama: "ドラマ" };
+  const catLabel = (c: typeof categories[number]) => ({
+    book: t("media.book"), movie: t("media.movie"), drama: t("media.drama"),
+  })[c];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-      <Text style={[f.sectionHeader, { color: theme.text }]}>カスタムメディア種別の追加</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("media.title")}</Text>
       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         {categories.map((c) => (
           <Pressable key={c}
             style={[f.chip, { backgroundColor: newCategory === c ? accent : theme.borderLight }]}
             onPress={() => setNewCategory(c)}>
-            <Text style={[f.chipText, { color: newCategory === c ? theme.accentFg : theme.textSub }]}>{catLabel[c]}</Text>
+            <Text style={[f.chipText, { color: newCategory === c ? theme.accentFg : theme.textSub }]}>{catLabel(c)}</Text>
           </Pressable>
         ))}
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TextInput style={[f.input, { flex: 1, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
-          value={newName} onChangeText={setNewName} placeholder="種別名" placeholderTextColor={theme.placeholder} />
+          value={newName} onChangeText={setNewName} placeholder={t("media.nameLabel")} placeholderTextColor={theme.placeholder} />
         <Pressable style={[f.addBtn, { backgroundColor: accent }]} onPress={add}>
-          <Text style={[f.addBtnText, { color: theme.accentFg }]}>追加</Text>
+          <Text style={[f.addBtnText, { color: theme.accentFg }]}>{t("media.add")}</Text>
         </Pressable>
       </View>
 
@@ -386,15 +393,15 @@ function MediaTypesTab() {
         if (catItems.length === 0) return null;
         return (
           <View key={cat}>
-            <Text style={[f.catLabel, { color: theme.textMuted }]}>{catLabel[cat]}</Text>
+            <Text style={[f.catLabel, { color: theme.textMuted }]}>{catLabel(cat)}</Text>
             {catItems.map((item) => (
               <View key={item.id} style={[f.mediaRow, { backgroundColor: theme.card }]}>
                 <Text style={[f.mediaName, { color: theme.text }]} numberOfLines={1}>{getMediaTypeName(item, language)}</Text>
                 {item.isDefault ? (
-                  <Text style={[f.defaultBadge, { color: theme.textMuted, backgroundColor: theme.borderLight }]}>デフォルト</Text>
+                  <Text style={[f.defaultBadge, { color: theme.textMuted, backgroundColor: theme.borderLight }]}>{t("media.default")}</Text>
                 ) : (
                   <Pressable onPress={() => del(item.id)}>
-                    <Text style={[f.deleteText, { color: theme.destructive }]}>削除</Text>
+                    <Text style={[f.deleteText, { color: theme.destructive }]}>{t("media.delete")}</Text>
                   </Pressable>
                 )}
               </View>
@@ -407,11 +414,20 @@ function MediaTypesTab() {
 }
 
 function DataTab() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const accent = useAccent();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+
+  const summaryLine = (label: string, stat: { added: number; updated: number; skipped: number }) => {
+    const parts: string[] = [];
+    if (stat.added > 0) parts.push(t("data.added", { n: stat.added }));
+    if (stat.updated > 0) parts.push(t("data.updated", { n: stat.updated }));
+    if (stat.skipped > 0) parts.push(t("data.skipped", { n: stat.skipped }));
+    return `${label}: ${parts.length ? parts.join(" / ") : t("data.noChange")}`;
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -419,7 +435,6 @@ function DataTab() {
       const { json, filename } = await exportImportApi.getExportData();
 
       if (Platform.OS === "android") {
-        // Android: SAF でフォルダを選択してファイル保存
         const perm = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
         if (!perm.granted) return;
         const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
@@ -428,19 +443,18 @@ function DataTab() {
           "application/json"
         );
         await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
-        Alert.alert("保存しました", `${filename} を保存しました`);
+        Alert.alert(t("profile.saved"), filename);
       } else {
-        // iOS: 共有シートでファイルを出力（「ファイル」アプリへ保存可能）
         const fileUri = `${FileSystem.cacheDirectory}${filename}`;
         await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
         await Sharing.shareAsync(fileUri, {
           mimeType: "application/json",
-          dialogTitle: "JSONファイルを保存",
+          dialogTitle: t("data.exportBtn"),
           UTI: "public.json",
         });
       }
     } catch {
-      Alert.alert("エラー", "エクスポートに失敗しました");
+      Alert.alert(t("common.error"), t("data.exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -453,7 +467,7 @@ function DataTab() {
       const r = await exportImportApi.importData(jsonText, mode);
       setResult(r);
     } catch {
-      Alert.alert("エラー", "インポートに失敗しました。JSONの形式を確認してください");
+      Alert.alert(t("common.error"), t("data.importFailed"));
     } finally {
       setImporting(false);
     }
@@ -461,19 +475,18 @@ function DataTab() {
 
   const handleImport = async () => {
     try {
-      // Android API 32以下では READ_EXTERNAL_STORAGE 権限を明示的に要求
       if (Platform.OS === "android" && (Platform.Version as number) <= 32) {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
           {
-            title: "ファイルアクセスの許可",
-            message: "JSONファイルをインポートするためにファイルへのアクセスが必要です",
-            buttonPositive: "許可",
-            buttonNegative: "キャンセル",
+            title: t("data.filePermTitle"),
+            message: t("data.filePermMsg"),
+            buttonPositive: t("data.filePermAllow"),
+            buttonNegative: t("data.filePermDeny"),
           }
         );
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert("権限が必要です", "ファイルを選択するにはアクセス許可が必要です");
+          Alert.alert(t("data.filePermRequired"), t("data.filePermRequiredMsg"));
           return;
         }
       }
@@ -490,85 +503,75 @@ function DataTab() {
       try {
         JSON.parse(content);
       } catch {
-        Alert.alert("エラー", "JSONの形式が正しくありません");
+        Alert.alert(t("common.error"), t("data.invalidJson"));
         return;
       }
 
       Alert.alert(
-        "インポート方法を選択",
+        t("data.importMethodTitle"),
         "",
         [
-          { text: "追加（重複スキップ）", onPress: () => runImport(content, "merge-skip") },
-          { text: "追加（重複上書き）", onPress: () => runImport(content, "merge-overwrite") },
+          { text: t("data.mergeSkip"), onPress: () => runImport(content, "merge-skip") },
+          { text: t("data.mergeOverwrite"), onPress: () => runImport(content, "merge-overwrite") },
           {
-            text: "差し替え（全削除後）",
+            text: t("data.replace"),
             style: "destructive",
             onPress: () =>
-              Alert.alert("確認", "既存のすべてのデータが削除されます。続けますか？", [
-                { text: "キャンセル", style: "cancel" },
-                { text: "差し替え", style: "destructive", onPress: () => runImport(content, "replace") },
+              Alert.alert(t("common.confirm"), t("data.replaceConfirm"), [
+                { text: t("common.cancel"), style: "cancel" },
+                { text: t("data.replaceBtn"), style: "destructive", onPress: () => runImport(content, "replace") },
               ]),
           },
-          { text: "キャンセル", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
         ]
       );
     } catch {
-      Alert.alert("エラー", "ファイルの読み込みに失敗しました");
+      Alert.alert(t("common.error"), t("data.fileReadFailed"));
     }
   };
 
-  const summaryLine = (label: string, s: { added: number; updated: number; skipped: number }) => {
-    const parts: string[] = [];
-    if (s.added > 0) parts.push(`${s.added}件追加`);
-    if (s.updated > 0) parts.push(`${s.updated}件上書き`);
-    if (s.skipped > 0) parts.push(`${s.skipped}件スキップ`);
-    return `${label}: ${parts.length ? parts.join(" / ") : "変更なし"}`;
-  };
+  const resultSections = [
+    { key: "books" as const, label: t("media.book") },
+    { key: "movies" as const, label: t("media.movie") },
+    { key: "dramas" as const, label: t("media.drama") },
+  ];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-      <Text style={[f.sectionHeader, { color: theme.text }]}>データのエクスポート</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("data.exportTitle")}</Text>
       <View style={[f.card, { backgroundColor: theme.card }]}>
-        <Text style={[f.description, { color: theme.textMuted }]}>
-          書籍・映画・ドラマのデータをJSONファイルとして出力します
-        </Text>
+        <Text style={[f.description, { color: theme.textMuted }]}>{t("data.exportDesc")}</Text>
         <Pressable
           style={[f.btn, { backgroundColor: accent, marginTop: 4 }, exporting && f.btnDisabled]}
           onPress={handleExport}
           disabled={exporting}
         >
           <Text style={[f.btnText, { color: theme.accentFg }]}>
-            {exporting ? "エクスポート中..." : "JSONファイルをエクスポート"}
+            {exporting ? t("data.exporting") : t("data.exportBtn")}
           </Text>
         </Pressable>
       </View>
 
       <View style={[f.divider, { borderTopColor: theme.border }]} />
 
-      <Text style={[f.sectionHeader, { color: theme.text }]}>データのインポート</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("data.importTitle")}</Text>
       <View style={[f.card, { backgroundColor: theme.card }]}>
-        <Text style={[f.description, { color: theme.textMuted }]}>
-          エクスポートしたJSONファイルを選択してインポートします
-        </Text>
+        <Text style={[f.description, { color: theme.textMuted }]}>{t("data.importDesc")}</Text>
         <Pressable
           style={[f.btn, { backgroundColor: theme.borderLight, marginTop: 4 }, importing && f.btnDisabled]}
           onPress={handleImport}
           disabled={importing}
         >
           <Text style={[f.btnText, { color: theme.text }]}>
-            {importing ? "インポート中..." : "JSONファイルを選択"}
+            {importing ? t("data.importing") : t("data.importBtn")}
           </Text>
         </Pressable>
       </View>
 
       {result && (
         <View style={[f.card, { backgroundColor: theme.card, borderWidth: 1, borderColor: "#16A34A" }]}>
-          <Text style={[f.sectionHeader, { color: "#16A34A", fontSize: 14 }]}>インポートが完了しました</Text>
-          {([
-            { key: "books" as const, label: "書籍" },
-            { key: "movies" as const, label: "映画" },
-            { key: "dramas" as const, label: "ドラマ" },
-          ] as const).map(({ key, label }) => (
+          <Text style={[f.sectionHeader, { color: "#16A34A", fontSize: 14 }]}>{t("data.importCompleted")}</Text>
+          {resultSections.map(({ key, label }) => (
             <Text key={key} style={[f.description, { color: theme.textSub }]}>
               {summaryLine(label, result[key])}
             </Text>
@@ -580,18 +583,19 @@ function DataTab() {
 }
 
 function AppearanceTab() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { isDark, setDark } = useDarkModeStore();
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-      <Text style={[f.sectionHeader, { color: theme.text }]}>表示モード</Text>
+      <Text style={[f.sectionHeader, { color: theme.text }]}>{t("appearance.title")}</Text>
       <View style={[f.card, { backgroundColor: theme.card }]}>
         <View style={[f.shareRow, { borderTopWidth: 0 }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[f.shareUser, { color: theme.text }]}>ダークモード</Text>
+            <Text style={[f.shareUser, { color: theme.text }]}>{t("appearance.darkMode")}</Text>
             <Text style={[f.description, { color: theme.textMuted }]}>
-              {isDark ? "ダークモードで表示中" : "ライトモードで表示中"}
+              {isDark ? t("appearance.darkModeOn") : t("appearance.lightModeOn")}
             </Text>
           </View>
           <Switch
@@ -606,6 +610,7 @@ function AppearanceTab() {
 }
 
 function ServerSettingsTab() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const accent = useAccent();
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -621,7 +626,7 @@ function ServerSettingsTab() {
       await serverSettingsApi.update({ registrationEnabled: value });
       setEnabled(value);
     } catch {
-      Alert.alert("エラー", "設定の保存に失敗しました");
+      Alert.alert(t("common.error"), t("server.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -629,13 +634,13 @@ function ServerSettingsTab() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-      <Text style={[{ fontSize: 16, fontWeight: "600", marginBottom: 8 }, { color: theme.text }]}>サーバー設定</Text>
+      <Text style={[{ fontSize: 16, fontWeight: "600", marginBottom: 8 }, { color: theme.text }]}>{t("server.title")}</Text>
       <View style={[{ borderRadius: 12, padding: 16, borderWidth: 1 }, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flex: 1, marginRight: 12 }}>
-            <Text style={[{ fontSize: 14, fontWeight: "500" }, { color: theme.text }]}>新規アカウント登録</Text>
+            <Text style={[{ fontSize: 14, fontWeight: "500" }, { color: theme.text }]}>{t("server.registration")}</Text>
             <Text style={[{ fontSize: 12, marginTop: 2 }, { color: theme.textMuted }]}>
-              有効にするとログイン画面から誰でも登録できます
+              {t("server.registrationDesc")}
             </Text>
           </View>
           <Switch
@@ -648,7 +653,7 @@ function ServerSettingsTab() {
         </View>
       </View>
       <Text style={[{ fontSize: 12 }, { color: theme.textMuted }]}>
-        ※ 登録されたユーザーのロールは「member」になります
+        {t("server.registrationNote")}
       </Text>
     </ScrollView>
   );
@@ -662,7 +667,6 @@ const s = StyleSheet.create({
   tabActive: {},
   tabText: { fontSize: 13 },
 });
-
 
 const f = StyleSheet.create({
   sectionHeader: { fontSize: 15, fontWeight: "700" },

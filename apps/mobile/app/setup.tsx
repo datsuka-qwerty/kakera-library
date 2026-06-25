@@ -4,10 +4,12 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from "react-native";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { setupApi, authApi } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function SetupScreen() {
+  const { t } = useTranslation();
   const { setAuth } = useAuthStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,9 +17,9 @@ export default function SetupScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSetup = async () => {
-    if (!username.trim()) { Alert.alert("エラー", "ユーザー名を入力してください"); return; }
-    if (password.length < 8) { Alert.alert("エラー", "パスワードは8文字以上で入力してください"); return; }
-    if (password !== confirm) { Alert.alert("エラー", "パスワードが一致しません"); return; }
+    if (!username.trim()) { Alert.alert(t("common.error"), t("setup.errorUsername")); return; }
+    if (password.length < 8) { Alert.alert(t("common.error"), t("setup.errorPasswordLength")); return; }
+    if (password !== confirm) { Alert.alert(t("common.error"), t("setup.errorPasswordMatch")); return; }
 
     setLoading(true);
     try {
@@ -26,7 +28,7 @@ export default function SetupScreen() {
       setAuth(data.accessToken, data.refreshToken, data.user);
       router.replace("/(tabs)/");
     } catch {
-      Alert.alert("エラー", "セットアップに失敗しました。サーバーの状態を確認してください。");
+      Alert.alert(t("common.error"), t("setup.errorFailed"));
     } finally {
       setLoading(false);
     }
@@ -36,20 +38,20 @@ export default function SetupScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
         <Text style={s.title}>Kakera Library</Text>
-        <Text style={s.subtitle}>初期セットアップ</Text>
-        <Text style={s.description}>管理者アカウントを作成してください</Text>
+        <Text style={s.subtitle}>{t("setup.title")}</Text>
+        <Text style={s.description}>{t("setup.subtitle")}</Text>
 
-        <Text style={s.label}>ユーザー名</Text>
+        <Text style={s.label}>{t("profile.username")}</Text>
         <TextInput style={s.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
 
-        <Text style={s.label}>パスワード（8文字以上）</Text>
+        <Text style={s.label}>{t("profile.passwordHint")}</Text>
         <TextInput style={s.input} value={password} onChangeText={setPassword} secureTextEntry />
 
-        <Text style={s.label}>パスワード（確認）</Text>
+        <Text style={s.label}>{t("profile.passwordConfirm")}</Text>
         <TextInput style={s.input} value={confirm} onChangeText={setConfirm} secureTextEntry />
 
         <Pressable style={[s.button, loading && s.buttonDisabled]} onPress={handleSetup} disabled={loading}>
-          <Text style={s.buttonText}>{loading ? "作成中..." : "管理者アカウントを作成"}</Text>
+          <Text style={s.buttonText}>{loading ? t("setup.creating") : t("setup.createBtn")}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

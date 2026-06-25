@@ -4,10 +4,12 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from "react-native";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { authApi, setupApi, serverSettingsApi } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { setAuth, setServerUrl, serverUrl } = useAuthStore();
   const [url, setUrl] = useState(serverUrl);
   const [username, setUsername] = useState("");
@@ -24,7 +26,7 @@ export default function LoginScreen() {
   }, [url]);
 
   const handleLogin = async () => {
-    if (!url.trim()) { Alert.alert("エラー", "サーバーURLを入力してください"); return; }
+    if (!url.trim()) { Alert.alert(t("common.error"), t("login.errorServerUrl")); return; }
     setLoading(true);
     setServerUrl(url.trim().replace(/\/$/, ""));
     try {
@@ -41,7 +43,7 @@ export default function LoginScreen() {
       if (status === 428) {
         setNeedTotp(true);
       } else {
-        Alert.alert("ログイン失敗", "ユーザー名またはパスワードが正しくありません");
+        Alert.alert(t("login.loginFailed"), t("login.loginFailedMsg"));
       }
     } finally {
       setLoading(false);
@@ -53,7 +55,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
         <Text style={s.title}>Kakera Library</Text>
 
-        <Text style={s.label}>サーバーURL</Text>
+        <Text style={s.label}>{t("login.serverUrl")}</Text>
         <TextInput
           style={s.input}
           value={url}
@@ -62,13 +64,13 @@ export default function LoginScreen() {
           autoCapitalize="none"
           keyboardType="url"
         />
-        <Text style={s.label}>ユーザー名</Text>
+        <Text style={s.label}>{t("login.username")}</Text>
         <TextInput style={s.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
-        <Text style={s.label}>パスワード</Text>
+        <Text style={s.label}>{t("login.password")}</Text>
         <TextInput style={s.input} value={password} onChangeText={setPassword} secureTextEntry />
         {needTotp && (
           <>
-            <Text style={s.label}>認証コード（Google Authenticator）</Text>
+            <Text style={s.label}>{t("login.totpCode")}</Text>
             <TextInput
               style={s.input}
               value={totpCode}
@@ -81,13 +83,13 @@ export default function LoginScreen() {
         )}
 
         <Pressable style={[s.button, loading && s.buttonDisabled]} onPress={handleLogin} disabled={loading}>
-          <Text style={s.buttonText}>{loading ? "ログイン中..." : "ログイン"}</Text>
+          <Text style={s.buttonText}>{loading ? t("login.loggingIn") : t("login.loginBtn")}</Text>
         </Pressable>
 
         {registrationEnabled && (
           <Pressable onPress={() => router.push("/register" as never)} style={s.registerLink}>
-            <Text style={s.registerLinkText}>アカウントをお持ちでない方は </Text>
-            <Text style={[s.registerLinkText, s.registerLinkBold]}>新規登録</Text>
+            <Text style={s.registerLinkText}>{t("login.noAccount")} </Text>
+            <Text style={[s.registerLinkText, s.registerLinkBold]}>{t("login.registerLink")}</Text>
           </Pressable>
         )}
       </ScrollView>

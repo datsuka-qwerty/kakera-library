@@ -3,15 +3,10 @@ import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator } from
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Settings, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { dashboardApi, type DashboardFilter, type DashStats } from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
 import { useAccent, useTheme } from "../../lib/theme";
-
-const STATUS_LABELS: Record<string, string> = {
-  want_to_read: "読みたい", reading: "読書中", completed: "読了", on_hold: "積読",
-  unwatched: "未視聴", watched: "視聴済み",
-  interested: "気になる", watching: "視聴中", dropped: "途中まで",
-};
 
 const STATUS_COLORS: Record<string, string> = {
   want_to_read: "#3B82F6", reading: "#10B981", completed: "#6B7280", on_hold: "#F59E0B",
@@ -26,6 +21,7 @@ const THIS_YEAR = now.getFullYear();
 const THIS_MONTH = now.getMonth() + 1;
 
 export default function DashboardScreen() {
+  const { t } = useTranslation();
   const { user, accessToken } = useAuthStore();
   const accent = useAccent();
   const theme = useTheme();
@@ -58,7 +54,6 @@ export default function DashboardScreen() {
     }
   }, [period, year, month, accessToken]);
 
-  // Reload on mount and whenever the filter changes
   useEffect(() => { load(); }, [load]);
 
   const prevMonth = () => {
@@ -70,33 +65,34 @@ export default function DashboardScreen() {
     else setMonth((m) => m + 1);
   };
 
+  const PERIODS: { key: Period; label: string }[] = [
+    { key: "monthly", label: t("dashboard.periodMonthly") },
+    { key: "yearly", label: t("dashboard.periodYearly") },
+    { key: "all", label: t("dashboard.periodAll") },
+  ];
+
   const sections = stats ? [
-    { label: "書籍", data: stats.books },
-    { label: "映画", data: stats.movies },
-    { label: "ドラマ", data: stats.dramas },
+    { label: t("media.book"), data: stats.books },
+    { label: t("media.movie"), data: stats.movies },
+    { label: t("media.drama"), data: stats.dramas },
   ] : [];
 
-  const totalLabel = period === "all" ? "登録合計"
-    : period === "yearly" ? `${year}年の登録数`
-    : `${year}年${month}月の登録数`;
-
-  const PERIODS: { key: Period; label: string }[] = [
-    { key: "monthly", label: "月間" },
-    { key: "yearly", label: "年間" },
-    { key: "all", label: "全期間" },
-  ];
+  const totalLabel = period === "all" ? t("dashboard.totalAll")
+    : period === "yearly" ? t("dashboard.totalYear", { year })
+    : t("dashboard.totalMonth", { year, month });
 
   return (
     <View style={[s.container, { backgroundColor: theme.bg }]}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={[s.headerTitle, { color: theme.text }]}>ダッシュボード</Text>
+        <Text style={[s.headerTitle, { color: theme.text }]}>{t("dashboard.title")}</Text>
         <Pressable onPress={() => router.push("/settings")} style={s.settingsBtn}>
           <Settings size={22} color={theme.textSub} />
         </Pressable>
       </View>
-      <Text style={[s.welcome, { color: theme.textMuted }]}>こんにちは、{user?.username ?? ""}さん</Text>
+      <Text style={[s.welcome, { color: theme.textMuted }]}>
+        {t("dashboard.greeting", { name: user?.username ?? "" })}
+      </Text>
 
-      {/* Period selector */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         style={[s.periodBar, { borderBottomColor: theme.border }]}
         contentContainerStyle={{ paddingHorizontal: 16, gap: 6, alignItems: "center" }}>
@@ -119,7 +115,9 @@ export default function DashboardScreen() {
             <Pressable onPress={prevMonth} style={s.navBtn}>
               <ChevronLeft size={16} color={theme.textSub} />
             </Pressable>
-            <Text style={[s.dateLabel, { color: theme.text }]}>{year}年{month}月</Text>
+            <Text style={[s.dateLabel, { color: theme.text }]}>
+              {t("dashboard.dateMonthYear", { year, month })}
+            </Text>
             <Pressable
               onPress={nextMonth}
               style={s.navBtn}
@@ -135,7 +133,9 @@ export default function DashboardScreen() {
             <Pressable onPress={() => setYear((y) => y - 1)} style={s.navBtn}>
               <ChevronLeft size={16} color={theme.textSub} />
             </Pressable>
-            <Text style={[s.dateLabel, { color: theme.text }]}>{year}年</Text>
+            <Text style={[s.dateLabel, { color: theme.text }]}>
+              {t("dashboard.dateYear", { year })}
+            </Text>
             <Pressable
               onPress={() => setYear((y) => y + 1)}
               style={s.navBtn}
@@ -149,9 +149,9 @@ export default function DashboardScreen() {
 
       {loadError && !loading && (
         <View style={[s.errorBanner, { backgroundColor: theme.card, borderColor: "#EF4444" }]}>
-          <Text style={[s.errorText, { color: "#EF4444" }]}>サーバーに接続できません</Text>
+          <Text style={[s.errorText, { color: "#EF4444" }]}>{t("dashboard.serverError")}</Text>
           <Pressable onPress={load} style={s.retryBtn}>
-            <Text style={[s.retryText, { color: accent }]}>再試行</Text>
+            <Text style={[s.retryText, { color: accent }]}>{t("dashboard.retry")}</Text>
           </Pressable>
         </View>
       )}
@@ -160,54 +160,63 @@ export default function DashboardScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 }}>
           <Text style={[s.periodTitle, { color: theme.textMuted }]}>{totalLabel}</Text>
-          {sections.map(({ label, data }) => (
-            <View key={label} style={[s.card, { backgroundColor: theme.card }]}>
-              <View style={s.cardHeader}>
-                <Text style={[s.cardTitle, { color: theme.text }]}>{label}</Text>
-                <Text style={[s.cardTotal, { color: theme.textMuted }]}>{data.total}件</Text>
-              </View>
-              <View style={s.statusList}>
-                {Object.entries(data.byStatus).map(([st, count]) => (
-                  <View key={st} style={s.statusRow}>
-                    <View style={[s.statusDot, { backgroundColor: STATUS_COLORS[st] ?? "#9CA3AF" }]} />
-                    <Text style={[s.statusLabel, { color: theme.textSub }]}>{STATUS_LABELS[st] ?? st}</Text>
-                    <Text style={[s.statusCount, { color: theme.text }]}>{count}</Text>
-                  </View>
-                ))}
-              </View>
-              {Object.keys(data.byMonth).length > 0 && (
-                <View style={[s.monthSection, { borderTopColor: theme.borderLight }]}>
-                  <Text style={[s.monthTitle, { color: theme.textMuted }]}>
-                    {period === "monthly" ? "今月の完了" : period === "yearly" ? `${year}年の完了` : "今月の完了"}
-                  </Text>
-                  <Text style={[s.monthCount, { color: accent }]}>
-                    {period === "monthly"
-                      ? (data.byMonth[`${year}-${String(month).padStart(2, "0")}`] ?? 0)
-                      : period === "yearly"
-                      ? Object.values(data.byMonth).reduce((a, b) => a + b, 0)
-                      : (data.byMonth[new Date().toISOString().slice(0, 7)] ?? 0)
-                    }件
+          {sections.map(({ label, data }) => {
+            const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+            const monthCount = period === "monthly"
+              ? (data.byMonth[monthKey] ?? 0)
+              : period === "yearly"
+              ? Object.values(data.byMonth).reduce((a, b) => a + b, 0)
+              : (data.byMonth[new Date().toISOString().slice(0, 7)] ?? 0);
+            const monthTitle = period === "yearly"
+              ? t("dashboard.yearCompleted", { year })
+              : t("dashboard.thisMonthCompleted");
+
+            return (
+              <View key={label} style={[s.card, { backgroundColor: theme.card }]}>
+                <View style={s.cardHeader}>
+                  <Text style={[s.cardTitle, { color: theme.text }]}>{label}</Text>
+                  <Text style={[s.cardTotal, { color: theme.textMuted }]}>
+                    {t("dashboard.count", { n: data.total })}
                   </Text>
                 </View>
-              )}
-              {Object.keys(data.byGenre ?? {}).length > 0 && (
-                <View style={[s.genreSection, { borderTopColor: theme.borderLight }]}>
-                  <Text style={[s.genreTitle, { color: theme.textMuted }]}>ジャンル分布</Text>
-                  <View style={s.genreList}>
-                    {Object.entries(data.byGenre)
-                      .sort(([, a], [, b]) => b - a)
-                      .slice(0, 5)
-                      .map(([g, count]) => (
-                        <View key={g} style={s.genreRow}>
-                          <Text style={[s.genreLabel, { color: theme.textSub }]} numberOfLines={1}>{g}</Text>
-                          <Text style={[s.genreCount, { color: theme.text }]}>{count}</Text>
-                        </View>
-                      ))}
-                  </View>
+                <View style={s.statusList}>
+                  {Object.entries(data.byStatus).map(([st, count]) => (
+                    <View key={st} style={s.statusRow}>
+                      <View style={[s.statusDot, { backgroundColor: STATUS_COLORS[st] ?? "#9CA3AF" }]} />
+                      <Text style={[s.statusLabel, { color: theme.textSub }]}>
+                        {t(`status.${st}`, { defaultValue: st })}
+                      </Text>
+                      <Text style={[s.statusCount, { color: theme.text }]}>{count}</Text>
+                    </View>
+                  ))}
                 </View>
-              )}
-            </View>
-          ))}
+                {Object.keys(data.byMonth).length > 0 && (
+                  <View style={[s.monthSection, { borderTopColor: theme.borderLight }]}>
+                    <Text style={[s.monthTitle, { color: theme.textMuted }]}>{monthTitle}</Text>
+                    <Text style={[s.monthCount, { color: accent }]}>
+                      {t("dashboard.count", { n: monthCount })}
+                    </Text>
+                  </View>
+                )}
+                {Object.keys(data.byGenre ?? {}).length > 0 && (
+                  <View style={[s.genreSection, { borderTopColor: theme.borderLight }]}>
+                    <Text style={[s.genreTitle, { color: theme.textMuted }]}>{t("dashboard.genreDistribution")}</Text>
+                    <View style={s.genreList}>
+                      {Object.entries(data.byGenre)
+                        .sort(([, a], [, b]) => b - a)
+                        .slice(0, 5)
+                        .map(([g, count]) => (
+                          <View key={g} style={s.genreRow}>
+                            <Text style={[s.genreLabel, { color: theme.textSub }]} numberOfLines={1}>{g}</Text>
+                            <Text style={[s.genreCount, { color: theme.text }]}>{count}</Text>
+                          </View>
+                        ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </ScrollView>
       )}
     </View>

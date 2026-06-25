@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { dashboardApi } from "../lib/api";
 import { useTheme, useAccent } from "../lib/theme";
 
@@ -12,12 +13,6 @@ type DashStats = {
   dramas: { total: number; byStatus: Record<string, number>; byMonth: Record<string, number> };
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  want_to_read: "読みたい", reading: "読書中", completed: "読了", on_hold: "積読",
-  unwatched: "未視聴", watched: "視聴済み",
-  interested: "気になる", watching: "視聴中", dropped: "途中まで",
-};
-
 const STATUS_COLORS: Record<string, string> = {
   want_to_read: "#3B82F6", reading: "#10B981", completed: "#6B7280", on_hold: "#F59E0B",
   unwatched: "#3B82F6", watched: "#6B7280",
@@ -25,6 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function SharedDashboardScreen() {
+  const { t } = useTranslation();
   const { username } = useLocalSearchParams<{ username: string }>();
   const theme = useTheme();
   const accent = useAccent();
@@ -36,14 +32,14 @@ export default function SharedDashboardScreen() {
     if (!username) return;
     dashboardApi.getUserStats(username)
       .then(setStats)
-      .catch(() => Alert.alert("エラー", "ダッシュボードの読み込みに失敗しました"))
+      .catch(() => Alert.alert(t("common.error"), t("sharedDashboard.loadError")))
       .finally(() => setLoading(false));
   }, [username]);
 
   const sections = stats ? [
-    { label: "書籍", data: stats.books },
-    { label: "映画", data: stats.movies },
-    { label: "ドラマ", data: stats.dramas },
+    { label: t("media.book"), data: stats.books },
+    { label: t("media.movie"), data: stats.movies },
+    { label: t("media.drama"), data: stats.dramas },
   ] : [];
 
   return (
@@ -53,7 +49,7 @@ export default function SharedDashboardScreen() {
           <ArrowLeft size={22} color={theme.textSub} />
         </Pressable>
         <Text style={[s.title, { color: theme.text }]} numberOfLines={1}>
-          {username ?? "ユーザー"}のダッシュボード
+          {t("sharedDashboard.title", { username: username ?? t("sharedDashboard.defaultUser") })}
         </Text>
         <View style={{ width: 40 }} />
       </View>
@@ -62,31 +58,41 @@ export default function SharedDashboardScreen() {
         <ActivityIndicator style={{ marginTop: 60 }} color={accent} />
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}>
-          {sections.map(({ label, data }) => (
-            <View key={label} style={[s.card, { backgroundColor: theme.card }]}>
-              <View style={s.cardHeader}>
-                <Text style={[s.cardTitle, { color: theme.text }]}>{label}</Text>
-                <Text style={[s.cardTotal, { color: theme.textMuted }]}>{data.total}件</Text>
-              </View>
-              <View style={s.statusList}>
-                {Object.entries(data.byStatus).map(([st, count]) => (
-                  <View key={st} style={s.statusRow}>
-                    <View style={[s.dot, { backgroundColor: STATUS_COLORS[st] ?? "#9CA3AF" }]} />
-                    <Text style={[s.statusLabel, { color: theme.textSub }]}>{STATUS_LABELS[st] ?? st}</Text>
-                    <Text style={[s.statusCount, { color: theme.text }]}>{count}</Text>
-                  </View>
-                ))}
-              </View>
-              {Object.keys(data.byMonth).length > 0 && (
-                <View style={[s.monthRow, { borderTopColor: theme.borderLight }]}>
-                  <Text style={[s.monthLabel, { color: theme.textMuted }]}>今月の完了</Text>
-                  <Text style={[s.monthCount, { color: accent }]}>
-                    {Object.entries(data.byMonth).find(([k]) => k === new Date().toISOString().slice(0, 7))?.[1] ?? 0}件
+          {sections.map(({ label, data }) => {
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const monthCount = data.byMonth[thisMonth] ?? 0;
+            return (
+              <View key={label} style={[s.card, { backgroundColor: theme.card }]}>
+                <View style={s.cardHeader}>
+                  <Text style={[s.cardTitle, { color: theme.text }]}>{label}</Text>
+                  <Text style={[s.cardTotal, { color: theme.textMuted }]}>
+                    {t("dashboard.count", { n: data.total })}
                   </Text>
                 </View>
-              )}
-            </View>
-          ))}
+                <View style={s.statusList}>
+                  {Object.entries(data.byStatus).map(([st, count]) => (
+                    <View key={st} style={s.statusRow}>
+                      <View style={[s.dot, { backgroundColor: STATUS_COLORS[st] ?? "#9CA3AF" }]} />
+                      <Text style={[s.statusLabel, { color: theme.textSub }]}>
+                        {t(`status.${st}`, { defaultValue: st })}
+                      </Text>
+                      <Text style={[s.statusCount, { color: theme.text }]}>{count}</Text>
+                    </View>
+                  ))}
+                </View>
+                {Object.keys(data.byMonth).length > 0 && (
+                  <View style={[s.monthRow, { borderTopColor: theme.borderLight }]}>
+                    <Text style={[s.monthLabel, { color: theme.textMuted }]}>
+                      {t("sharedDashboard.thisMonthCompleted")}
+                    </Text>
+                    <Text style={[s.monthCount, { color: accent }]}>
+                      {t("dashboard.count", { n: monthCount })}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </ScrollView>
       )}
     </View>

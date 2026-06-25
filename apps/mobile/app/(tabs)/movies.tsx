@@ -6,6 +6,7 @@ import {
 import { useFocusEffect, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, Search, X, Layers, ChevronRight, List } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { moviesApi, mediaTypesApi } from "../../lib/api";
 import type { Movie, MovieStatus } from "@kakera/shared";
 import { useLanguageStore } from "../../store/languageStore";
@@ -15,13 +16,11 @@ import StarRating from "../../components/ui/StarRating";
 import CoverImage from "../../components/ui/CoverImage";
 import { useAccent, useTheme } from "../../lib/theme";
 
-const STATUSES = [
-  { value: "", label: "すべて" },
-  { value: "unwatched", label: "未視聴" },
-  { value: "watched", label: "視聴済み" },
-];
+const MOVIE_FILTER_VALUES = ["", "unwatched", "watched"];
+const MOVIE_FORM_STATUS: MovieStatus[] = ["unwatched", "watched"];
 
 export default function MoviesScreen() {
+  const { t } = useTranslation();
   const accent = useAccent();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -79,7 +78,7 @@ export default function MoviesScreen() {
           <Search size={16} color={theme.placeholder} />
           <TextInput
             style={[s.searchInput, { color: theme.text }]}
-            placeholder="タイトル・監督で検索"
+            placeholder={t("content.searchMovies")}
             placeholderTextColor={theme.placeholder}
             value={search}
             onChangeText={setSearch}
@@ -97,22 +96,24 @@ export default function MoviesScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-        {STATUSES.map((st) => (
+        {MOVIE_FILTER_VALUES.map((sv) => (
           <Pressable
-            key={st.value}
-            style={[s.filterChip, { backgroundColor: status === st.value ? accent : theme.borderLight }]}
-            onPress={() => setStatus(st.value)}
+            key={sv}
+            style={[s.filterChip, { backgroundColor: status === sv ? accent : theme.borderLight }]}
+            onPress={() => setStatus(sv)}
           >
-            <Text style={[s.filterChipText, { color: status === st.value ? "#fff" : theme.textSub }]}>{st.label}</Text>
+            <Text style={[s.filterChipText, { color: status === sv ? "#fff" : theme.textSub }]}>
+              {sv ? t(`status.${sv}`) : t("status.all")}
+            </Text>
           </Pressable>
         ))}
       </ScrollView>
 
       {loadError && !loading && (
         <View style={[s.errorBanner, { backgroundColor: theme.card, borderColor: "#EF4444" }]}>
-          <Text style={[s.errorText, { color: "#EF4444" }]}>サーバーに接続できません</Text>
+          <Text style={[s.errorText, { color: "#EF4444" }]}>{t("content.serverError")}</Text>
           <Pressable onPress={load} style={s.retryBtn}>
-            <Text style={[s.retryText, { color: accent }]}>再試行</Text>
+            <Text style={[s.retryText, { color: accent }]}>{t("content.retry")}</Text>
           </Pressable>
         </View>
       )}
@@ -120,7 +121,7 @@ export default function MoviesScreen() {
         <ActivityIndicator style={{ marginTop: 40 }} color={accent} />
       ) : groupBySeries ? (
         <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 24 }}>
-          {movies.length === 0 && <Text style={[s.empty, { color: theme.textMuted }]}>映画がありません</Text>}
+          {movies.length === 0 && <Text style={[s.empty, { color: theme.textMuted }]}>{t("content.noMovies")}</Text>}
           {Array.from(seriesGroups.entries()).map(([key, items]) => {
             if (key === "__none__") {
               return items.map((item) => (
@@ -147,7 +148,7 @@ export default function MoviesScreen() {
                   <CoverImage src={items[0]?.coverImageUrl} width={32} height={44} />
                   <ChevronRight size={14} color={theme.textMuted} style={{ transform: [{ rotate: isExpanded ? "90deg" : "0deg" }] }} />
                   <Text style={[s.seriesTitle, { color: theme.text, flex: 1 }]} numberOfLines={1}>{key}</Text>
-                  <Text style={[s.seriesCount, { color: theme.textMuted }]}>{items.length}作品</Text>
+                  <Text style={[s.seriesCount, { color: theme.textMuted }]}>{t("content.works", { n: items.length })}</Text>
                 </Pressable>
                 {isExpanded && items.map((item) => (
                   <Pressable key={item.id} style={[s.card, { backgroundColor: theme.card, marginTop: 4 }]} onPress={() => openEdit(item)}>
@@ -194,7 +195,7 @@ export default function MoviesScreen() {
               </View>
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={[s.empty, { color: theme.textMuted }]}>映画がありません</Text>}
+          ListEmptyComponent={<Text style={[s.empty, { color: theme.textMuted }]}>{t("content.noMovies")}</Text>}
         />
       )}
 
@@ -208,6 +209,7 @@ export default function MoviesScreen() {
 interface FormProps { initial: Movie | null; onCancel: () => void; onSaved: () => void; }
 
 function MovieForm({ initial, onCancel, onSaved }: FormProps) {
+  const { t } = useTranslation();
   const accent = useAccent();
   const theme = useTheme();
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -244,7 +246,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
       const res = await moviesApi.searchMeta(metaSearch);
       setMetaResults(res);
     } catch {
-      Alert.alert("エラー", "検索に失敗しました");
+      Alert.alert(t("common.error"), t("content.errorSearchFailed"));
     } finally {
       setSearching(false);
     }
@@ -271,7 +273,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
     );
 
   const save = async () => {
-    if (!title.trim()) { Alert.alert("エラー", "タイトルは必須です"); return; }
+    if (!title.trim()) { Alert.alert(t("common.error"), t("content.errorTitleRequired")); return; }
     setSaving(true);
     try {
       const payload = {
@@ -296,16 +298,16 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
       }
       onSaved();
     } catch {
-      Alert.alert("エラー", "保存に失敗しました");
+      Alert.alert(t("common.error"), t("content.errorSaveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
   const del = () => {
-    Alert.alert("削除確認", "この映画を削除しますか？", [
-      { text: "キャンセル", style: "cancel" },
-      { text: "削除", style: "destructive", onPress: async () => { await moviesApi.delete(initial!.id); onSaved(); } },
+    Alert.alert(t("content.confirmDelete"), t("content.deleteMovie"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: async () => { await moviesApi.delete(initial!.id); onSaved(); } },
     ]);
   };
 
@@ -313,17 +315,17 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <View style={[f.header, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
         <Pressable onPress={onCancel}><X size={22} color={theme.textSub} /></Pressable>
-        <Text style={[f.headerTitle, { color: theme.text }]}>{initial ? "映画を編集" : "映画を追加"}</Text>
+        <Text style={[f.headerTitle, { color: theme.text }]}>{initial ? t("content.editMovie") : t("content.addMovie")}</Text>
         <Pressable onPress={save} disabled={saving}>
-          <Text style={[f.saveText, { color: accent }]}>{saving ? "保存中..." : "保存"}</Text>
+          <Text style={[f.saveText, { color: accent }]}>{saving ? t("common.saving") : t("common.save")}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <Text style={[f.sectionTitle, { color: theme.textMuted }]}>TMDBで検索</Text>
+        <Text style={[f.sectionTitle, { color: theme.textMuted }]}>{t("content.tmdbSearch")}</Text>
         <View style={f.metaRow}>
           <TextInput style={[f.input, { flex: 1, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
-            placeholder="タイトルで検索"
+            placeholder={t("content.searchTitlePlaceholder")}
             placeholderTextColor={theme.placeholder} value={metaSearch} onChangeText={setMetaSearch} />
           <Pressable style={[f.actionBtn, { backgroundColor: accent }]} onPress={searchMeta}>
             {searching ? <ActivityIndicator color="#fff" size="small" /> : <Search size={16} color="#fff" />}
@@ -344,45 +346,45 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
           </View>
         )}
 
-        <Text style={[f.label, { color: theme.textMuted }]}>タイトル *</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldTitle")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={title} onChangeText={setTitle} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>シリーズ名</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldSeriesName")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesName} onChangeText={setSeriesName} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>シリーズ順</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldSeriesOrder")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesOrder} onChangeText={setSeriesOrder} keyboardType="number-pad" />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>監督（カンマ区切り）</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldDirectors")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={directors} onChangeText={setDirectors} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>公開日（YYYY-MM-DD）</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldReleasedAt")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={releasedAt} onChangeText={setReleasedAt}
           placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>視聴日（YYYY-MM-DD）</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldWatchedAt")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={watchedAt} onChangeText={setWatchedAt}
           placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>カバー画像URL</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldCoverImageUrl")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={coverImageUrl} onChangeText={setCoverImageUrl} autoCapitalize="none" />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>ステータス</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldStatus")}</Text>
         <View style={f.chipRow}>
-          {STATUSES.filter((st) => st.value).map((st) => (
+          {MOVIE_FORM_STATUS.map((sv) => (
             <Pressable
-              key={st.value}
-              style={[f.chip, { backgroundColor: status === st.value ? accent : theme.borderLight }]}
-              onPress={() => setStatus(st.value as MovieStatus)}
+              key={sv}
+              style={[f.chip, { backgroundColor: status === sv ? accent : theme.borderLight }]}
+              onPress={() => setStatus(sv)}
             >
-              <Text style={[f.chipText, { color: status === st.value ? "#fff" : theme.textSub }]}>{st.label}</Text>
+              <Text style={[f.chipText, { color: status === sv ? "#fff" : theme.textSub }]}>{t(`status.${sv}`)}</Text>
             </Pressable>
           ))}
         </View>
 
         {availableMediaTypes.length > 0 && (
           <>
-            <Text style={[f.label, { color: theme.textMuted }]}>メディア種別</Text>
+            <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldMediaTypes")}</Text>
             <View style={f.chipRow}>
               {availableMediaTypes.map((m) => (
                 <Pressable
@@ -399,7 +401,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
 
         {genres.length > 0 && (
           <>
-            <Text style={[f.label, { color: theme.textMuted }]}>ジャンル</Text>
+            <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldGenre")}</Text>
             <View style={f.chipRow}>
               {genres.map((g) => (
                 <View key={g} style={[f.chip, { backgroundColor: "#22c55e22" }]}>
@@ -410,13 +412,13 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
           </>
         )}
 
-        <Text style={[f.label, { color: theme.textMuted }]}>評価</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldRating")}</Text>
         <StarRating value={rating} onChange={setRating} size={28} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>タグ</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldTags")}</Text>
         <View style={f.metaRow}>
           <TextInput style={[f.input, { flex: 1, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={tagInput} onChangeText={setTagInput}
-            placeholder="タグを入力" placeholderTextColor={theme.placeholder}
+            placeholder={t("content.tagPlaceholder")} placeholderTextColor={theme.placeholder}
             onSubmitEditing={addTag} returnKeyType="done" />
           <Pressable style={[f.actionBtn, { backgroundColor: accent }]} onPress={addTag}>
             <Plus size={16} color="#fff" />
@@ -425,7 +427,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
         {tags.length > 0 && (
           <View style={f.chipRow}>
             {tags.map((tag) => (
-              <Pressable key={tag} style={[f.tagChip, { backgroundColor: theme.borderLight }]} onPress={() => setTags(tags.filter((t) => t !== tag))}>
+              <Pressable key={tag} style={[f.tagChip, { backgroundColor: theme.borderLight }]} onPress={() => setTags(tags.filter((tg) => tg !== tag))}>
                 <Text style={[f.tagText, { color: theme.textSub }]}>{tag}</Text>
                 <X size={12} color={theme.textSub} />
               </Pressable>
@@ -433,13 +435,13 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
           </View>
         )}
 
-        <Text style={[f.label, { color: theme.textMuted }]}>メモ</Text>
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldMemo")}</Text>
         <TextInput style={[f.input, { height: 80, backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={memo} onChangeText={setMemo} multiline
           textAlignVertical="top" />
 
         {initial && (
           <Pressable style={[f.deleteBtn, { backgroundColor: theme.destructive + "20" }]} onPress={del}>
-            <Text style={[f.deleteBtnText, { color: theme.destructive }]}>削除</Text>
+            <Text style={[f.deleteBtnText, { color: theme.destructive }]}>{t("common.delete")}</Text>
           </Pressable>
         )}
       </ScrollView>

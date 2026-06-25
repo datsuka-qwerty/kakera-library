@@ -4,10 +4,12 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from "react-native";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const { setAuth, serverUrl } = useAuthStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,15 +18,15 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!username.trim() || !password) {
-      Alert.alert("エラー", "すべての項目を入力してください");
+      Alert.alert(t("common.error"), t("register.errorRequired"));
       return;
     }
     if (password !== confirm) {
-      Alert.alert("エラー", "パスワードが一致しません");
+      Alert.alert(t("common.error"), t("register.errorPasswordMatch"));
       return;
     }
     if (password.length < 8) {
-      Alert.alert("エラー", "パスワードは8文字以上で入力してください");
+      Alert.alert(t("common.error"), t("register.errorPasswordLength"));
       return;
     }
     setLoading(true);
@@ -34,9 +36,9 @@ export default function RegisterScreen() {
       router.replace("/(tabs)/");
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409) Alert.alert("エラー", "このユーザー名はすでに使われています");
-      else if (status === 403) Alert.alert("エラー", "現在、新規登録は受け付けていません");
-      else Alert.alert("エラー", "登録に失敗しました。再度お試しください");
+      if (status === 409) Alert.alert(t("common.error"), t("register.errorUserExists"));
+      else if (status === 403) Alert.alert(t("common.error"), t("register.errorDisabled"));
+      else Alert.alert(t("common.error"), t("register.errorFailed"));
     } finally {
       setLoading(false);
     }
@@ -46,10 +48,10 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
         <Text style={s.title}>Kakera Library</Text>
-        <Text style={s.subtitle}>新規アカウント登録</Text>
+        <Text style={s.subtitle}>{t("register.title")}</Text>
         <Text style={s.serverUrl}>{serverUrl}</Text>
 
-        <Text style={s.label}>ユーザー名</Text>
+        <Text style={s.label}>{t("profile.username")}</Text>
         <TextInput
           style={s.input}
           value={username}
@@ -57,7 +59,7 @@ export default function RegisterScreen() {
           autoCapitalize="none"
           autoComplete="username"
         />
-        <Text style={s.label}>パスワード（8文字以上）</Text>
+        <Text style={s.label}>{t("profile.passwordHint")}</Text>
         <TextInput
           style={s.input}
           value={password}
@@ -65,7 +67,7 @@ export default function RegisterScreen() {
           secureTextEntry
           autoComplete="new-password"
         />
-        <Text style={s.label}>パスワード（確認）</Text>
+        <Text style={s.label}>{t("profile.passwordConfirm")}</Text>
         <TextInput
           style={s.input}
           value={confirm}
@@ -75,11 +77,11 @@ export default function RegisterScreen() {
         />
 
         <Pressable style={[s.button, loading && s.buttonDisabled]} onPress={handleRegister} disabled={loading}>
-          <Text style={s.buttonText}>{loading ? "登録中..." : "アカウントを作成"}</Text>
+          <Text style={s.buttonText}>{loading ? t("register.creating") : t("register.createBtn")}</Text>
         </Pressable>
 
         <Pressable onPress={() => router.back()} style={s.backLink}>
-          <Text style={s.backLinkText}>ログインに戻る</Text>
+          <Text style={s.backLinkText}>{t("register.backToLogin")}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
