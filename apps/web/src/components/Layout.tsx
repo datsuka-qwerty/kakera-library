@@ -66,25 +66,22 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Bottom section: ダークモード → 共有 → アカウント名 */}
         <div className="relative px-2 pb-2 space-y-0.5">
           {profileOpen && <ProfilePopover onClose={() => setProfileOpen(false)} />}
 
-          {/* ダークモード */}
           <button
             onClick={toggle}
-            title={dark ? "ライトモード" : "ダークモード"}
+            title={dark ? t("layout.lightMode") : t("layout.darkMode")}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             {dark ? <Sun size={17} className="flex-shrink-0" /> : <Moon size={17} className="flex-shrink-0" />}
-            <span className="hidden md:inline">{dark ? "ライトモード" : "ダークモード"}</span>
+            <span className="hidden md:inline">{dark ? t("layout.lightMode") : t("layout.darkMode")}</span>
           </button>
 
-          {/* 共有 */}
           <NavLink
             to="/sharing"
             onClick={() => setProfileOpen(false)}
-            title="共有"
+            title={t("nav.sharing")}
             className={({ isActive }) =>
               clsx(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
@@ -95,10 +92,9 @@ export default function Layout() {
             }
           >
             <Share2 size={17} className="flex-shrink-0" />
-            <span className="hidden md:inline">共有</span>
+            <span className="hidden md:inline">{t("nav.sharing")}</span>
           </NavLink>
 
-          {/* アカウント名 */}
           <button
             onClick={() => setProfileOpen((v) => !v)}
             title={user?.username}

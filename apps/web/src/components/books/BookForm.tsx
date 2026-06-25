@@ -72,8 +72,8 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   };
 
   const addTag = () => {
-    const t = tagInput.trim();
-    if (t && !tags.includes(t)) setTags([...tags, t]);
+    const v = tagInput.trim();
+    if (v && !tags.includes(v)) setTags([...tags, v]);
     setTagInput("");
   };
 
@@ -102,16 +102,15 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Metadata search */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">メタデータ検索</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1">{t("book.metaSearch")}</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={metaSearch}
             onChange={(e) => setMetaSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleMetaSearch())}
-            placeholder="タイトルや著者で検索..."
+            placeholder={t("book.metaSearchPlaceholder")}
             className="input flex-1 text-sm"
           />
           <button type="button" onClick={handleMetaSearch} disabled={searching} className="btn-secondary px-3">
@@ -149,12 +148,12 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
           <input value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="input" />
         </div>
         <div>
-          <label className="form-label">巻数</label>
+          <label className="form-label">{t("book.volumes")}</label>
           <input type="number" min={1} value={seriesOrder} onChange={(e) => setSeriesOrder(e.target.value)} className="input" />
         </div>
         <div className="col-span-2">
           <label className="form-label">{t("book.authors")}</label>
-          <input value={authors} onChange={(e) => setAuthors(e.target.value)} placeholder="カンマ区切りで複数入力" className="input" />
+          <input value={authors} onChange={(e) => setAuthors(e.target.value)} placeholder={t("book.authorsPlaceholder")} className="input" />
         </div>
         <div>
           <label className="form-label">{t("book.isbn")}</label>
@@ -165,7 +164,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
           <input value={publisher} onChange={(e) => setPublisher(e.target.value)} className="input" />
         </div>
         <div className="col-span-2">
-          <label className="form-label">カバー画像URL</label>
+          <label className="form-label">{t("book.coverImageUrl")}</label>
           <input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} className="input" />
         </div>
         <div>
@@ -190,7 +189,6 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
         </div>
       </div>
 
-      {/* Media types */}
       <div>
         <label className="form-label">{t("book.mediaTypes")}</label>
         <div className="flex flex-wrap gap-2 mt-1">
@@ -209,10 +207,9 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
         </div>
       </div>
 
-      {/* Genres (from metadata, read-only) */}
       {genres.length > 0 && (
         <div>
-          <label className="form-label">ジャンル</label>
+          <label className="form-label">{t("book.genre")}</label>
           <div className="flex flex-wrap gap-1 mt-1">
             {genres.map((g) => (
               <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
@@ -223,33 +220,30 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
         </div>
       )}
 
-      {/* Rating */}
       <div>
         <label className="form-label">{t("book.rating")}</label>
         <StarRating value={rating} onChange={setRating} />
       </div>
 
-      {/* Tags */}
       <div>
-        <label className="form-label">タグ</label>
+        <label className="form-label">{t("book.tags")}</label>
         <div className="flex gap-2 mb-2">
           <input
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-            placeholder="タグを入力してEnter"
+            placeholder={t("book.tagPlaceholder")}
             className="input flex-1"
           />
-          <button type="button" onClick={addTag} className="btn-secondary px-3 text-sm">追加</button>
+          <button type="button" onClick={addTag} className="btn-secondary px-3 text-sm">{t("common.add")}</button>
         </div>
         <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
-            <TagBadge key={tag} name={tag} onRemove={() => setTags(tags.filter((t) => t !== tag))} />
+            <TagBadge key={tag} name={tag} onRemove={() => setTags(tags.filter((tg) => tg !== tag))} />
           ))}
         </div>
       </div>
 
-      {/* Memo */}
       <div>
         <label className="form-label">{t("book.memo")}</label>
         <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={3} className="input resize-none" />

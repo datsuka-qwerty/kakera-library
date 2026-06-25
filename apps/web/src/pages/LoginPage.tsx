@@ -104,15 +104,15 @@ export default function LoginPage() {
 
         {registrationEnabled && (
           <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            アカウントをお持ちでない方は{" "}
+            {t("login.noAccount")}{" "}
             <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-              新規登録
+              {t("login.signUp")}
             </Link>
           </p>
         )}
 
         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2">
-          <label className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">言語 / Language</label>
+          <label className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">{t("login.language")}</label>
           <select
             value={i18n.language}
             onChange={(e) => i18n.changeLanguage(e.target.value)}

@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Settings, LogOut, Camera } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../store/authStore";
 import { authApi } from "../lib/api/auth";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ProfilePopover({ onClose }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, refreshToken, clearAuth, updateUser } = useAuthStore();
@@ -76,13 +78,12 @@ export default function ProfilePopover({ onClose }: Props) {
       ref={popoverRef}
       className="absolute bottom-full left-2 right-2 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
     >
-      {/* Avatar + user info */}
       <div className="flex flex-col items-center pt-5 pb-4 px-4 gap-2">
         <div className="relative group">
           <button
             onClick={() => fileRef.current?.click()}
             className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center ring-2 ring-offset-2 ring-transparent group-hover:ring-gray-400 transition-all"
-            title="アイコンを変更"
+            title={t("profilePopover.changeAvatar")}
           >
             {user?.avatarUrl ? (
               <img src={user.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
@@ -111,14 +112,14 @@ export default function ProfilePopover({ onClose }: Props) {
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <Settings size={15} />
-          設定
+          {t("profilePopover.settings")}
         </button>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
         >
           <LogOut size={15} />
-          ログアウト
+          {t("profilePopover.logout")}
         </button>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { apiClient } from "../lib/apiClient";
 
 export default function SetupPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [username, setUsername] = useState("");
@@ -16,11 +18,11 @@ export default function SetupPage() {
     e.preventDefault();
     setError("");
     if (password.length < 8) {
-      setError("パスワードは8文字以上で入力してください");
+      setError(t("setup.errorTooShort"));
       return;
     }
     if (password !== confirm) {
-      setError("パスワードが一致しません");
+      setError(t("setup.errorMismatch"));
       return;
     }
     setLoading(true);
@@ -30,7 +32,7 @@ export default function SetupPage() {
       setAuth(res.data.accessToken, res.data.refreshToken, res.data.user);
       navigate("/dashboard");
     } catch {
-      setError("セットアップに失敗しました。入力内容を確認してください。");
+      setError(t("setup.errorGeneral"));
     } finally {
       setLoading(false);
     }
@@ -40,10 +42,10 @@ export default function SetupPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-surface-dark">
       <div className="w-full max-w-sm bg-surface-elevated-light dark:bg-surface-elevated-dark rounded-xl shadow-sm p-8">
         <h1 className="text-2xl font-bold text-center">Kakera Library</h1>
-        <p className="text-sm text-gray-500 text-center mt-1 mb-6">初期セットアップ — 管理者アカウントを作成</p>
+        <p className="text-sm text-gray-500 text-center mt-1 mb-6">{t("setup.subtitle")}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">ユーザー名</label>
+            <label className="block text-sm font-medium mb-1">{t("login.username")}</label>
             <input
               type="text"
               value={username}
@@ -53,7 +55,7 @@ export default function SetupPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">パスワード（8文字以上）</label>
+            <label className="block text-sm font-medium mb-1">{t("setup.password")}</label>
             <input
               type="password"
               value={password}
@@ -63,7 +65,7 @@ export default function SetupPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">パスワード（確認）</label>
+            <label className="block text-sm font-medium mb-1">{t("setup.passwordConfirm")}</label>
             <input
               type="password"
               value={confirm}
@@ -78,7 +80,7 @@ export default function SetupPage() {
             disabled={loading}
             className="w-full py-2 px-4 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? "作成中..." : "管理者アカウントを作成"}
+            {loading ? t("setup.creating") : t("setup.submit")}
           </button>
         </form>
       </div>

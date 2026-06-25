@@ -90,11 +90,11 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="form-label">メタデータ検索（TMDB）</label>
+        <label className="form-label">{t("drama.metaSearch")}</label>
         <div className="flex gap-2">
           <input value={metaSearch} onChange={(e) => setMetaSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleMetaSearch())}
-            placeholder="タイトルで検索..." className="input flex-1 text-sm" />
+            placeholder={t("drama.metaSearchPlaceholder")} className="input flex-1 text-sm" />
           <button type="button" onClick={handleMetaSearch} className="btn-secondary px-3"><Search size={15} /></button>
         </div>
         {metaResults.length > 0 && (
@@ -141,11 +141,11 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
           </div>
         )}
         <div>
-          <label className="form-label">第1シーズン放映日</label>
+          <label className="form-label">{t("drama.firstSeasonAiredAt")}</label>
           <input type="date" value={firstSeasonAiredAt} onChange={(e) => setFirstSeasonAiredAt(e.target.value)} className="input" />
         </div>
         <div>
-          <label className="form-label">現行シーズン放映日</label>
+          <label className="form-label">{t("drama.currentSeasonAiredAt")}</label>
           <input type="date" value={currentSeasonAiredAt} onChange={(e) => setCurrentSeasonAiredAt(e.target.value)} className="input" />
         </div>
         <div>
@@ -153,7 +153,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
           <input type="date" value={watchStartedAt} onChange={(e) => setWatchStartedAt(e.target.value)} className="input" />
         </div>
         <div className="col-span-2">
-          <label className="form-label">カバー画像URL</label>
+          <label className="form-label">{t("drama.coverImageUrl")}</label>
           <input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} className="input" />
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
 
       {genres.length > 0 && (
         <div>
-          <label className="form-label">ジャンル</label>
+          <label className="form-label">{t("drama.genre")}</label>
           <div className="flex flex-wrap gap-1 mt-1">
             {genres.map((g) => (
               <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
@@ -190,15 +190,15 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
       </div>
 
       <div>
-        <label className="form-label">タグ</label>
+        <label className="form-label">{t("drama.tags")}</label>
         <div className="flex gap-2 mb-2">
           <input value={tagInput} onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-            placeholder="タグを入力してEnter" className="input flex-1" />
-          <button type="button" onClick={addTag} className="btn-secondary px-3 text-sm">追加</button>
+            placeholder={t("drama.tagPlaceholder")} className="input flex-1" />
+          <button type="button" onClick={addTag} className="btn-secondary px-3 text-sm">{t("common.add")}</button>
         </div>
         <div className="flex flex-wrap gap-1">
-          {tags.map((tag) => <TagBadge key={tag} name={tag} onRemove={() => setTags(tags.filter((t) => t !== tag))} />)}
+          {tags.map((tag) => <TagBadge key={tag} name={tag} onRemove={() => setTags(tags.filter((tg) => tg !== tag))} />)}
         </div>
       </div>
 
