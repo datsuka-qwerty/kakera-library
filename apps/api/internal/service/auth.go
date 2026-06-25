@@ -145,6 +145,10 @@ func DisableTOTP(ctx context.Context, userID string) error {
 	return err
 }
 
+func IssueTokens(ctx context.Context, userID, role string) (*TokenPair, error) {
+	return issueTokenPair(ctx, userID, role)
+}
+
 func issueTokenPair(ctx context.Context, userID, role string) (*TokenPair, error) {
 	accessTTL, _ := time.ParseDuration(getenv("JWT_ACCESS_TTL", "15m"))
 	refreshTTL, _ := time.ParseDuration(getenv("JWT_REFRESH_TTL", "168h")) // 7d

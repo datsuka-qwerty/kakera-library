@@ -8,6 +8,54 @@ import (
 	"github.com/kakera-library/api/internal/service"
 )
 
+type registerRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func Register(c echo.Context) error {
+	enabled, err := service.GetRegistrationEnabled(c.Request().Context())
+	if err != nil || !enabled {
+		return c.JSON(http.StatusForbidden, errResp("registration_disabled", "registration is disabled"))
+	}
+
+	var req registerRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
+	}
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", "username, email and password are required"))
+	}
+
+	user, err := service.CreateUser(c.Request().Context(), service.CreateUserInput{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     "member",
+	})
+	if err != nil {
+		return c.JSON(http.StatusConflict, errResp("conflict", "username or email already taken"))
+	}
+
+	pair, err := service.IssueTokens(c.Request().Context(), user.ID, user.Role)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+
+	return c.JSON(http.StatusCreated, map[string]any{
+		"accessToken":  pair.AccessToken,
+		"refreshToken": pair.RefreshToken,
+		"user": map[string]any{
+			"id":        user.ID,
+			"username":  user.Username,
+			"email":     user.Email,
+			"role":      user.Role,
+			"avatarUrl": user.AvatarURL,
+		},
+	})
+}
+
 type loginRequest struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`

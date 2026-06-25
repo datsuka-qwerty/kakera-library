@@ -37,9 +37,14 @@ func registerRoutes(e *echo.Echo) {
 	v1.GET("/setup", handler.GetSetupStatus)
 	v1.POST("/setup", handler.RunSetup)
 
+	// Server settings (public read, admin write)
+	v1.GET("/server-settings", handler.GetServerSettings)
+	v1.PUT("/server-settings", handler.UpdateServerSettings, apimiddleware.JWT(), apimiddleware.AdminOnly())
+
 	// Auth
 	auth := v1.Group("/auth")
 	auth.POST("/login", handler.Login)
+	auth.POST("/register", handler.Register)
 	auth.POST("/refresh", handler.RefreshToken)
 	auth.POST("/logout", handler.Logout)
 

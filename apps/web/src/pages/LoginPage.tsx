@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { apiClient } from "../lib/apiClient";
+import { serverSettingsApi } from "../lib/api/misc";
 
 const LANGUAGES: { code: string; label: string }[] = [
   { code: "ja", label: "日本語" },
@@ -18,6 +19,11 @@ export default function LoginPage() {
   const [totpCode, setTotpCode] = useState("");
   const [needTotp, setNeedTotp] = useState(false);
   const [error, setError] = useState("");
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+
+  useEffect(() => {
+    serverSettingsApi.get().then((s) => setRegistrationEnabled(s.registrationEnabled)).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +101,15 @@ export default function LoginPage() {
             {t("login.submit")}
           </button>
         </form>
+
+        {registrationEnabled && (
+          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            アカウントをお持ちでない方は{" "}
+            <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+              新規登録
+            </Link>
+          </p>
+        )}
 
         <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-center gap-2">
           <label className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">言語 / Language</label>

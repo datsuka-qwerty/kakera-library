@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View, Text, TextInput, Pressable, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { authApi, setupApi } from "../lib/api";
+import { authApi, setupApi, serverSettingsApi } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
 export default function LoginScreen() {
@@ -15,6 +15,13 @@ export default function LoginScreen() {
   const [totpCode, setTotpCode] = useState("");
   const [needTotp, setNeedTotp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+
+  useEffect(() => {
+    if (url.trim()) {
+      serverSettingsApi.get().then((d) => setRegistrationEnabled(d.registrationEnabled)).catch(() => {});
+    }
+  }, [url]);
 
   const handleLogin = async () => {
     if (!url.trim()) { Alert.alert("エラー", "サーバーURLを入力してください"); return; }
@@ -76,6 +83,13 @@ export default function LoginScreen() {
         <Pressable style={[s.button, loading && s.buttonDisabled]} onPress={handleLogin} disabled={loading}>
           <Text style={s.buttonText}>{loading ? "ログイン中..." : "ログイン"}</Text>
         </Pressable>
+
+        {registrationEnabled && (
+          <Pressable onPress={() => router.push("/register" as never)} style={s.registerLink}>
+            <Text style={s.registerLinkText}>アカウントをお持ちでない方は </Text>
+            <Text style={[s.registerLinkText, s.registerLinkBold]}>新規登録</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -89,4 +103,7 @@ const s = StyleSheet.create({
   button: { backgroundColor: "#111827", borderRadius: 10, padding: 14, alignItems: "center", marginTop: 6 },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  registerLink: { flexDirection: "row", justifyContent: "center", marginTop: 16 },
+  registerLinkText: { fontSize: 13, color: "#6B7280" },
+  registerLinkBold: { color: "#2563EB", fontWeight: "600" },
 });

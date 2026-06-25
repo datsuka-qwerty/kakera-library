@@ -4,14 +4,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Camera } from "lucide-react";
 import { authApi } from "../lib/api/auth";
-import { mediaTypesApi, sharingApi, backupApi, usersApi, exportImportApi } from "../lib/api/misc";
+import { mediaTypesApi, sharingApi, backupApi, usersApi, exportImportApi, serverSettingsApi } from "../lib/api/misc";
 import type { ImportResult } from "../lib/api/misc";
 import { getMediaTypeName } from "../lib/mediaTypeLabels";
 import { useAuthStore } from "../store/authStore";
 import Modal from "../components/ui/Modal";
 import clsx from "clsx";
 
-type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "data" | "backup" | "users";
+type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "data" | "backup" | "users" | "server";
 
 const CATEGORIES = ["book", "movie", "drama"] as const;
 const CATEGORY_LABELS = { book: "本", movie: "映画", drama: "ドラマ" };
@@ -34,6 +34,7 @@ export default function SettingsPage() {
     { key: "data", label: "データ" },
     { key: "backup", label: "バックアップ", adminOnly: true },
     { key: "users", label: "ユーザー管理", adminOnly: true },
+    { key: "server", label: "サーバー設定", adminOnly: true },
   ].filter((t) => !t.adminOnly || user?.role === "admin") as { key: Tab; label: string; adminOnly?: boolean }[];
 
   return (
@@ -67,6 +68,7 @@ export default function SettingsPage() {
           {tab === "data" && <DataTab />}
           {tab === "backup" && <BackupTab />}
           {tab === "users" && <UsersTab qc={qc} />}
+          {tab === "server" && <ServerSettingsTab qc={qc} />}
         </div>
       </div>
     </div>
@@ -638,6 +640,50 @@ function BackupTab() {
           {(backupList ?? []).length === 0 && <p className="text-sm text-gray-400">バックアップがありません</p>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ServerSettingsTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["server-settings"],
+    queryFn: serverSettingsApi.get,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (enabled: boolean) => serverSettingsApi.update({ registrationEnabled: enabled }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["server-settings"] }),
+  });
+
+  if (isLoading) return <p className="text-sm text-gray-400">読み込み中...</p>;
+
+  return (
+    <div className="space-y-6 max-w-md">
+      <h3 className="font-semibold">サーバー設定</h3>
+      <div className="flex items-center justify-between px-4 py-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div>
+          <p className="text-sm font-medium">新規アカウント登録</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            有効にすると、ログイン画面から誰でもアカウントを作成できます
+          </p>
+        </div>
+        <button
+          onClick={() => mutation.mutate(!data?.registrationEnabled)}
+          disabled={mutation.isPending}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+            data?.registrationEnabled ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              data?.registrationEnabled ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
+      <p className="text-xs text-gray-400">
+        ※ 登録されたユーザーのロールは「member」になります
+      </p>
     </div>
   );
 }

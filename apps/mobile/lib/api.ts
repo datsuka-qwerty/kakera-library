@@ -49,6 +49,16 @@ export const authApi = {
     api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
       "/auth/login", { username, password, totpCode }
     ),
+  register: (data: { username: string; email: string; password: string }) =>
+    api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
+      "/auth/register", data
+    ),
+};
+
+export const serverSettingsApi = {
+  get: () => api.get<{ registrationEnabled: boolean }>("/server-settings"),
+  update: (data: { registrationEnabled: boolean }) =>
+    api.put<{ registrationEnabled: boolean }>("/server-settings", data),
 };
 
 export const booksApi = {

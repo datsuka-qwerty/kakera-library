@@ -104,3 +104,18 @@ export const usersApi = {
     apiClient.put(`/users/${id}`, data).then((r) => r.data),
   delete: (id: string) => apiClient.delete(`/users/${id}`),
 };
+
+export interface ServerSettings { registrationEnabled: boolean }
+
+export const serverSettingsApi = {
+  get: () => apiClient.get<ServerSettings>("/server-settings").then((r) => r.data),
+  update: (data: ServerSettings) =>
+    apiClient.put<ServerSettings>("/server-settings", data).then((r) => r.data),
+};
+
+export const registerApi = {
+  register: (data: { username: string; email: string; password: string }) =>
+    apiClient.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
+      "/auth/register", data
+    ).then((r) => r.data),
+};

@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, LogOut } from "lucide-react-native";
 import { useAuthStore } from "../store/authStore";
 import { api } from "../lib/apiClient";
-import { mediaTypesApi, exportImportApi } from "../lib/api";
+import { mediaTypesApi, exportImportApi, serverSettingsApi } from "../lib/api";
 import type { ImportResult } from "../lib/api";
 import { useTheme, useAccent } from "../lib/theme";
 import { useDarkModeStore } from "../store/darkModeStore";
@@ -23,7 +23,7 @@ interface ShareTarget { userId: string; username: string; }
 interface RatingShareEntry { toUserId: string; toUsername: string; enabled: boolean; }
 interface ReceivedShares { dashboardOwners: ShareTarget[]; ratingSharers: ShareTarget[]; }
 
-type TabKey = "profile" | "sharing" | "mediaTypes" | "data" | "appearance";
+type TabKey = "profile" | "sharing" | "mediaTypes" | "data" | "appearance" | "server";
 
 export default function SettingsScreen() {
   const { user, clearAuth } = useAuthStore();
@@ -39,12 +39,17 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const adminTabs: { key: TabKey; label: string }[] = user?.role === "admin"
+    ? [{ key: "server", label: "サーバー" }]
+    : [];
+
   const TABS: { key: TabKey; label: string }[] = [
     { key: "profile", label: "プロフィール" },
     { key: "sharing", label: "共有" },
     { key: "mediaTypes", label: "メディア" },
     { key: "data", label: "データ" },
     { key: "appearance", label: "外観" },
+    ...adminTabs,
   ];
 
   return (
@@ -75,6 +80,7 @@ export default function SettingsScreen() {
       {tab === "mediaTypes" && <MediaTypesTab />}
       {tab === "data" && <DataTab />}
       {tab === "appearance" && <AppearanceTab />}
+      {tab === "server" && <ServerSettingsTab />}
     </View>
   );
 }
@@ -601,6 +607,55 @@ function AppearanceTab() {
           />
         </View>
       </View>
+    </ScrollView>
+  );
+}
+
+function ServerSettingsTab() {
+  const theme = useTheme();
+  const accent = useAccent();
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    serverSettingsApi.get().then((d) => setEnabled(d.registrationEnabled)).catch(() => {});
+  }, []);
+
+  const toggle = async (value: boolean) => {
+    setSaving(true);
+    try {
+      await serverSettingsApi.update({ registrationEnabled: value });
+      setEnabled(value);
+    } catch {
+      Alert.alert("エラー", "設定の保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <Text style={[{ fontSize: 16, fontWeight: "600", marginBottom: 8 }, { color: theme.text }]}>サーバー設定</Text>
+      <View style={[{ borderRadius: 12, padding: 16, borderWidth: 1 }, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text style={[{ fontSize: 14, fontWeight: "500" }, { color: theme.text }]}>新規アカウント登録</Text>
+            <Text style={[{ fontSize: 12, marginTop: 2 }, { color: theme.textMuted }]}>
+              有効にするとログイン画面から誰でも登録できます
+            </Text>
+          </View>
+          <Switch
+            value={enabled ?? false}
+            onValueChange={toggle}
+            disabled={enabled === null || saving}
+            trackColor={{ false: theme.borderLight, true: accent }}
+            thumbColor="#fff"
+          />
+        </View>
+      </View>
+      <Text style={[{ fontSize: 12 }, { color: theme.textMuted }]}>
+        ※ 登録されたユーザーのロールは「member」になります
+      </Text>
     </ScrollView>
   );
 }
