@@ -97,10 +97,10 @@ export const exportImportApi = {
 };
 
 export const usersApi = {
-  list: () => apiClient.get<{ id: string; username: string; email: string; role: string }[]>("/users").then((r) => r.data),
-  create: (data: { username: string; email: string; password: string; role?: string }) =>
+  list: () => apiClient.get<{ id: string; username: string; role: string }[]>("/users").then((r) => r.data),
+  create: (data: { username: string; password: string; role?: string }) =>
     apiClient.post("/users", data).then((r) => r.data),
-  update: (id: string, data: { email?: string; avatarUrl?: string; password?: string }) =>
+  update: (id: string, data: { avatarUrl?: string; password?: string }) =>
     apiClient.put(`/users/${id}`, data).then((r) => r.data),
   delete: (id: string) => apiClient.delete(`/users/${id}`),
 };
@@ -114,8 +114,8 @@ export const serverSettingsApi = {
 };
 
 export const registerApi = {
-  register: (data: { username: string; email: string; password: string }) =>
-    apiClient.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
+  register: (data: { username: string; password: string }) =>
+    apiClient.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; role: string } }>(
       "/auth/register", data
     ).then((r) => r.data),
 };

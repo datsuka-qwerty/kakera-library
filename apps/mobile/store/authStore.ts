@@ -5,7 +5,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 interface AuthUser {
   id: string;
   username: string;
-  email: string;
   role: string;
 }
 

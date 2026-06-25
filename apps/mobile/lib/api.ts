@@ -40,17 +40,17 @@ export interface ContentMeta {
 
 export const setupApi = {
   getStatus: () => api.get<{ needsSetup: boolean }>("/setup"),
-  createAdmin: (data: { username: string; email: string; password: string }) =>
+  createAdmin: (data: { username: string; password: string }) =>
     api.post<{ id: string; username: string }>("/setup", data),
 };
 
 export const authApi = {
   login: (username: string, password: string, totpCode?: string) =>
-    api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
+    api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; role: string } }>(
       "/auth/login", { username, password, totpCode }
     ),
-  register: (data: { username: string; email: string; password: string }) =>
-    api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; email: string; role: string } }>(
+  register: (data: { username: string; password: string }) =>
+    api.post<{ accessToken: string; refreshToken: string; user: { id: string; username: string; role: string } }>(
       "/auth/register", data
     ),
 };

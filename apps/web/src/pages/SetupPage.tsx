@@ -7,7 +7,6 @@ export default function SetupPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +25,7 @@ export default function SetupPage() {
     }
     setLoading(true);
     try {
-      await apiClient.post("/setup", { username, email, password });
+      await apiClient.post("/setup", { username, password });
       const res = await apiClient.post("/auth/login", { username, password });
       setAuth(res.data.accessToken, res.data.refreshToken, res.data.user);
       navigate("/dashboard");
@@ -49,16 +48,6 @@ export default function SetupPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">メールアドレス</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
               required
             />

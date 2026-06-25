@@ -7,7 +7,6 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -26,12 +25,12 @@ export default function RegisterPage() {
     if (password.length < 8) { setError("パスワードは8文字以上で入力してください"); return; }
     setLoading(true);
     try {
-      const data = await registerApi.register({ username, email, password });
+      const data = await registerApi.register({ username, password });
       setAuth(data.accessToken, data.refreshToken, data.user);
       navigate("/dashboard");
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409) setError("このユーザー名またはメールアドレスはすでに使われています");
+      if (status === 409) setError("このユーザー名はすでに使われています");
       else if (status === 403) setError("現在、新規登録は受け付けていません");
       else setError("登録に失敗しました。再度お試しください");
     } finally {
@@ -54,17 +53,6 @@ export default function RegisterPage() {
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
               required
               autoComplete="username"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">メールアドレス</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-              required
-              autoComplete="email"
             />
           </div>
           <div>

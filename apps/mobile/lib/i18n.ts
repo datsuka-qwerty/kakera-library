@@ -13,7 +13,6 @@ const ja = {
       language: "言語",
     },
     profile: {
-      email: "メールアドレス",
       newPassword: "新しいパスワード（変更する場合のみ）",
       save: "保存",
       saving: "保存中...",
@@ -93,7 +92,6 @@ const en = {
       language: "Language",
     },
     profile: {
-      email: "Email Address",
       newPassword: "New Password (only if changing)",
       save: "Save",
       saving: "Saving...",

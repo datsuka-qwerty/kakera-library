@@ -10,13 +10,12 @@ import { useAuthStore } from "../store/authStore";
 export default function RegisterScreen() {
   const { setAuth, serverUrl } = useAuthStore();
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!username.trim() || !email.trim() || !password) {
+    if (!username.trim() || !password) {
       Alert.alert("エラー", "すべての項目を入力してください");
       return;
     }
@@ -30,12 +29,12 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const data = await authApi.register({ username: username.trim(), email: email.trim(), password });
+      const data = await authApi.register({ username: username.trim(), password });
       setAuth(data.accessToken, data.refreshToken, data.user);
       router.replace("/(tabs)/");
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 409) Alert.alert("エラー", "このユーザー名またはメールアドレスはすでに使われています");
+      if (status === 409) Alert.alert("エラー", "このユーザー名はすでに使われています");
       else if (status === 403) Alert.alert("エラー", "現在、新規登録は受け付けていません");
       else Alert.alert("エラー", "登録に失敗しました。再度お試しください");
     } finally {
@@ -57,15 +56,6 @@ export default function RegisterScreen() {
           onChangeText={setUsername}
           autoCapitalize="none"
           autoComplete="username"
-        />
-        <Text style={s.label}>メールアドレス</Text>
-        <TextInput
-          style={s.input}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
         />
         <Text style={s.label}>パスワード（8文字以上）</Text>
         <TextInput

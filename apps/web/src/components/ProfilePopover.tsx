@@ -99,7 +99,6 @@ export default function ProfilePopover({ onClose }: Props) {
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
         <div className="text-center">
           <p className="font-semibold text-sm">{user?.username}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
           <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
             {user?.role}
           </span>

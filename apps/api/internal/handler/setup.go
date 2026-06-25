@@ -26,7 +26,6 @@ func RunSetup(c echo.Context) error {
 
 	var req struct {
 		Username string `json:"username"`
-		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 	if err := c.Bind(&req); err != nil {
@@ -35,7 +34,6 @@ func RunSetup(c echo.Context) error {
 
 	user, err := service.CreateUser(c.Request().Context(), service.CreateUserInput{
 		Username: req.Username,
-		Email:    req.Email,
 		Password: req.Password,
 		Role:     "admin",
 	})

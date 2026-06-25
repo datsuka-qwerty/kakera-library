@@ -10,20 +10,18 @@ import { useAuthStore } from "../store/authStore";
 export default function SetupScreen() {
   const { setAuth } = useAuthStore();
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSetup = async () => {
     if (!username.trim()) { Alert.alert("エラー", "ユーザー名を入力してください"); return; }
-    if (!email.trim()) { Alert.alert("エラー", "メールアドレスを入力してください"); return; }
     if (password.length < 8) { Alert.alert("エラー", "パスワードは8文字以上で入力してください"); return; }
     if (password !== confirm) { Alert.alert("エラー", "パスワードが一致しません"); return; }
 
     setLoading(true);
     try {
-      await setupApi.createAdmin({ username: username.trim(), email: email.trim(), password });
+      await setupApi.createAdmin({ username: username.trim(), password });
       const data = await authApi.login(username.trim(), password);
       setAuth(data.accessToken, data.refreshToken, data.user);
       router.replace("/(tabs)/");
@@ -43,9 +41,6 @@ export default function SetupScreen() {
 
         <Text style={s.label}>ユーザー名</Text>
         <TextInput style={s.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
-
-        <Text style={s.label}>メールアドレス</Text>
-        <TextInput style={s.input} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
 
         <Text style={s.label}>パスワード（8文字以上）</Text>
         <TextInput style={s.input} value={password} onChangeText={setPassword} secureTextEntry />

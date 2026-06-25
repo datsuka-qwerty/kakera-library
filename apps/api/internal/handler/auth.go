@@ -10,7 +10,6 @@ import (
 
 type registerRequest struct {
 	Username string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -24,13 +23,12 @@ func Register(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
 	}
-	if req.Username == "" || req.Email == "" || req.Password == "" {
-		return c.JSON(http.StatusBadRequest, errResp("bad_request", "username, email and password are required"))
+	if req.Username == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, errResp("bad_request", "username and password are required"))
 	}
 
 	user, err := service.CreateUser(c.Request().Context(), service.CreateUserInput{
 		Username: req.Username,
-		Email:    req.Email,
 		Password: req.Password,
 		Role:     "member",
 	})
@@ -49,7 +47,6 @@ func Register(c echo.Context) error {
 		"user": map[string]any{
 			"id":        user.ID,
 			"username":  user.Username,
-			"email":     user.Email,
 			"role":      user.Role,
 			"avatarUrl": user.AvatarURL,
 		},
@@ -90,7 +87,6 @@ func Login(c echo.Context) error {
 		"user": map[string]any{
 			"id":        user.ID,
 			"username":  user.Username,
-			"email":     user.Email,
 			"role":      user.Role,
 			"avatarUrl": user.AvatarURL,
 		},

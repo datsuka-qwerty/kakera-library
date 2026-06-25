@@ -18,7 +18,6 @@ func ListUsers(c echo.Context) error {
 func CreateUser(c echo.Context) error {
 	var req struct {
 		Username string `json:"username"`
-		Email    string `json:"email"`
 		Password string `json:"password"`
 		Role     string `json:"role"`
 	}
@@ -28,7 +27,6 @@ func CreateUser(c echo.Context) error {
 
 	user, err := service.CreateUser(c.Request().Context(), service.CreateUserInput{
 		Username: req.Username,
-		Email:    req.Email,
 		Password: req.Password,
 		Role:     req.Role,
 	})
@@ -48,7 +46,6 @@ func GetUser(c echo.Context) error {
 
 func UpdateUser(c echo.Context) error {
 	var req struct {
-		Email     *string `json:"email"`
 		AvatarURL *string `json:"avatarUrl"`
 		Password  *string `json:"password"`
 	}
@@ -56,7 +53,6 @@ func UpdateUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errResp("bad_request", err.Error()))
 	}
 
-	// Allow users to update only themselves, unless admin
 	callerID := c.Get("userId").(string)
 	callerRole := c.Get("role").(string)
 	targetID := c.Param("id")
@@ -65,7 +61,6 @@ func UpdateUser(c echo.Context) error {
 	}
 
 	user, err := service.UpdateUser(c.Request().Context(), targetID, service.UpdateUserInput{
-		Email:     req.Email,
 		AvatarURL: req.AvatarURL,
 		Password:  req.Password,
 	})

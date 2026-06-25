@@ -75,17 +75,16 @@ export default function SettingsPage() {
   );
 }
 
-function ProfileTab({ user }: { user: { id: string; username: string; email: string; role: string } | null }) {
+function ProfileTab({ user }: { user: { id: string; username: string; role: string } | null }) {
   const { updateUser } = useAuthStore();
   const { i18n } = useTranslation();
-  const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const avatarUrl = useAuthStore((s) => s.user?.avatarUrl);
 
   const updateMutation = useMutation({
-    mutationFn: () => usersApi.update(user!.id, { email: email || undefined, password: password || undefined }),
+    mutationFn: () => usersApi.update(user!.id, { password: password || undefined }),
     onSuccess: () => { setPassword(""); alert("保存しました"); },
   });
 
@@ -168,10 +167,6 @@ function ProfileTab({ user }: { user: { id: string; username: string; email: str
       <div>
         <label className="form-label">ユーザー名</label>
         <input value={user?.username ?? ""} disabled className="input opacity-60" />
-      </div>
-      <div>
-        <label className="form-label">メールアドレス</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
       </div>
       <div>
         <label className="form-label">新しいパスワード（変更する場合のみ）</label>
@@ -692,13 +687,12 @@ function UsersTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
   const { data: users } = useQuery({ queryKey: ["users"], queryFn: usersApi.list });
   const [modalOpen, setModalOpen] = useState(false);
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("member");
 
   const createMutation = useMutation({
-    mutationFn: () => usersApi.create({ username, email, password, role }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); setModalOpen(false); setUsername(""); setEmail(""); setPassword(""); },
+    mutationFn: () => usersApi.create({ username, password, role }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); setModalOpen(false); setUsername(""); setPassword(""); },
   });
 
   const deleteMutation = useMutation({
@@ -717,7 +711,7 @@ function UsersTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
           <div key={u.id} className="flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700">
             <div>
               <p className="text-sm font-medium">{u.username}</p>
-              <p className="text-xs text-gray-400">{u.email} · {u.role}</p>
+              <p className="text-xs text-gray-400">{u.role}</p>
             </div>
             <button onClick={() => { if (confirm(`「${u.username}」を削除しますか？`)) deleteMutation.mutate(u.id); }}
               className="text-xs text-red-400 hover:text-red-600">削除</button>
@@ -728,7 +722,6 @@ function UsersTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="ユーザーを追加" size="sm">
         <div className="space-y-3">
           <div><label className="form-label">ユーザー名</label><input value={username} onChange={(e) => setUsername(e.target.value)} className="input" /></div>
-          <div><label className="form-label">メールアドレス</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" /></div>
           <div><label className="form-label">パスワード</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" /></div>
           <div>
             <label className="form-label">ロール</label>
@@ -739,7 +732,7 @@ function UsersTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button onClick={() => setModalOpen(false)} className="btn-secondary">キャンセル</button>
-            <button onClick={() => createMutation.mutate()} disabled={!username || !email || !password} className="btn-primary">追加</button>
+            <button onClick={() => createMutation.mutate()} disabled={!username || !password} className="btn-primary">追加</button>
           </div>
         </div>
       </Modal>

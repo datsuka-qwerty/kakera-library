@@ -85,12 +85,11 @@ export default function SettingsScreen() {
   );
 }
 
-function ProfileTab({ user }: { user: { username: string; email: string } | null }) {
+function ProfileTab({ user }: { user: { username: string } | null }) {
   const { setAuth, accessToken, refreshToken } = useAuthStore();
   const theme = useTheme();
   const accent = useAccent();
   const { language, setLanguage } = useLanguageStore();
-  const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [langSaved, setLangSaved] = useState(false);
@@ -99,8 +98,7 @@ function ProfileTab({ user }: { user: { username: string; email: string } | null
   const save = async () => {
     setSaving(true);
     try {
-      const res = await api.put<{ id: string; username: string; email: string; role: string }>("/users/me", {
-        email: email.trim(),
+      const res = await api.put<{ id: string; username: string; role: string }>("/users/me", {
         password: password || undefined,
       });
       setAuth(accessToken!, refreshToken!, res);
@@ -127,10 +125,6 @@ function ProfileTab({ user }: { user: { username: string; email: string } | null
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
       <Text style={[f.sectionHeader, { color: theme.text }]}>アカウント</Text>
-      <Text style={[f.label, { color: theme.textMuted }]}>メールアドレス</Text>
-      <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
-        value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"
-        placeholderTextColor={theme.placeholder} />
       <Text style={[f.label, { color: theme.textMuted }]}>新しいパスワード（変更する場合のみ）</Text>
       <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
         value={password} onChangeText={setPassword} secureTextEntry placeholderTextColor={theme.placeholder} />
