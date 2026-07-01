@@ -77,7 +77,7 @@ export default function BooksPage() {
   }, [data?.data]);
 
   const handleDelete = (book: Book) => {
-    if (confirm(`「${book.title}」を削除しますか？`)) deleteMutation.mutate(book.id);
+    if (confirm(t("content.deleteConfirm", { title: book.title }))) deleteMutation.mutate(book.id);
   };
 
   return (
@@ -91,15 +91,15 @@ export default function BooksPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Share2 size={14} />
-            共有
+            {t("content.share")}
           </button>
           <button
             onClick={() => setGroupBySeries((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${groupBySeries ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent" : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-            title="シリーズでグループ表示"
+            title={t("content.groupedViewTitle")}
           >
             {groupBySeries ? <List size={15} /> : <Layers size={15} />}
-            {groupBySeries ? "一覧表示" : "シリーズ別"}
+            {groupBySeries ? t("content.listView") : t("content.groupedView")}
           </button>
           <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2">
             <Plus size={16} /> {t("common.add")}
@@ -107,7 +107,6 @@ export default function BooksPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <select
@@ -116,12 +115,11 @@ export default function BooksPage() {
           className="input w-auto text-sm"
         >
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s ? t(`book.statuses.${s}`) : "すべてのステータス"}</option>
+            <option key={s} value={s}>{s ? t(`book.statuses.${s}`) : t("content.allStatuses")}</option>
           ))}
         </select>
       </div>
 
-      {/* List */}
       {isLoading ? (
         <p className="text-sm text-gray-400">{t("common.loading")}</p>
       ) : groupBySeries ? (
@@ -142,7 +140,7 @@ export default function BooksPage() {
                   <CoverImage src={books[0]?.coverImageUrl} alt={seriesKey} className="w-8 h-11" />
                   <ChevronRight size={14} className={`text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                   <span className="text-sm font-semibold flex-1 text-gray-800 dark:text-gray-200">{seriesKey}</span>
-                  <span className="text-xs text-gray-400">{books.length}冊</span>
+                  <span className="text-xs text-gray-400">{t("content.volumes", { n: books.length })}</span>
                 </button>
                 {isExpanded && (
                   <div className="mt-1 ml-4 space-y-1">
@@ -155,7 +153,7 @@ export default function BooksPage() {
             );
           })}
           {(data?.data ?? []).length === 0 && (
-            <p className="text-sm text-gray-400 py-8 text-center">登録された本がありません</p>
+            <p className="text-sm text-gray-400 py-8 text-center">{t("content.noBooksRegistered")}</p>
           )}
         </div>
       ) : (
@@ -164,15 +162,14 @@ export default function BooksPage() {
             <BookRow key={book.id} book={book} onEdit={setEditing} onDelete={handleDelete} t={t} />
           ))}
           {(data?.data?.length ?? 0) === 0 && (
-            <p className="text-sm text-gray-400 py-8 text-center">登録された本がありません</p>
+            <p className="text-sm text-gray-400 py-8 text-center">{t("content.noBooksRegistered")}</p>
           )}
         </div>
       )}
 
       {data && !groupBySeries && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
 
-      {/* Create modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="本を追加" size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={t("content.addBook")} size="lg">
         <BookForm
           onSubmit={handleCreate}
           onCancel={() => setModalOpen(false)}
@@ -180,8 +177,7 @@ export default function BooksPage() {
         />
       </Modal>
 
-      {/* Edit modal */}
-      <Modal open={!!editing} onClose={() => setEditing(null)} title="本を編集" size="lg">
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={t("content.editBook")} size="lg">
         {editing && (
           <BookForm
             initial={editing}

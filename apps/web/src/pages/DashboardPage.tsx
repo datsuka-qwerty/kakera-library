@@ -39,10 +39,12 @@ function PeriodSelector({ period, year, month, onChangePeriod, onChangeYear, onC
   onChangeYear: (y: number) => void;
   onChangeMonth: (m: number) => void;
 }) {
+  const { t } = useTranslation();
+
   const tabs: { key: Period; label: string }[] = [
-    { key: "monthly", label: "月間" },
-    { key: "yearly", label: "年間" },
-    { key: "all", label: "全期間" },
+    { key: "monthly", label: t("dashboard.monthly") },
+    { key: "yearly", label: t("dashboard.yearly") },
+    { key: "all", label: t("dashboard.all") },
   ];
 
   const prevMonth = () => {
@@ -57,17 +59,17 @@ function PeriodSelector({ period, year, month, onChangePeriod, onChangeYear, onC
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {tabs.map((t) => (
+        {tabs.map((tb) => (
           <button
-            key={t.key}
-            onClick={() => onChangePeriod(t.key)}
+            key={tb.key}
+            onClick={() => onChangePeriod(tb.key)}
             className={`px-4 py-1.5 text-sm font-medium transition-colors ${
-              period === t.key
+              period === tb.key
                 ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
                 : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
             }`}
           >
-            {t.label}
+            {tb.label}
           </button>
         ))}
       </div>
@@ -77,7 +79,9 @@ function PeriodSelector({ period, year, month, onChangePeriod, onChangeYear, onC
           <button onClick={prevMonth} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm font-medium w-20 text-center">{year}年{month}月</span>
+          <span className="text-sm font-medium w-20 text-center">
+            {t("dashboard.yearMonth", { year, month })}
+          </span>
           <button
             onClick={nextMonth}
             disabled={year === THIS_YEAR && month === THIS_MONTH}
@@ -93,7 +97,7 @@ function PeriodSelector({ period, year, month, onChangePeriod, onChangeYear, onC
           <button onClick={() => onChangeYear(year - 1)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm font-medium w-16 text-center">{year}年</span>
+          <span className="text-sm font-medium w-16 text-center">{t("dashboard.year", { year })}</span>
           <button
             onClick={() => onChangeYear(year + 1)}
             disabled={year >= THIS_YEAR}
@@ -123,9 +127,9 @@ export default function DashboardPage() {
     queryFn: () => dashboardApi.getStats(filter),
   });
 
-  const periodLabel = period === "monthly" ? `${year}年${month}月`
-    : period === "yearly" ? `${year}年`
-    : "全期間";
+  const periodLabel = period === "monthly" ? t("dashboard.yearMonth", { year, month })
+    : period === "yearly" ? t("dashboard.year", { year })
+    : t("dashboard.all");
 
   if (isLoading) return <p className="text-sm text-gray-400">{t("common.loading")}</p>;
   if (!stats) return null;
@@ -153,23 +157,42 @@ export default function DashboardPage() {
     ...Object.keys(stats.dramas.byMonth),
   ])).sort();
 
-  // For "all": show last 24 months. For yearly: all 12 months of the year. For monthly: single bar.
   const displayMonths = period === "all" ? allMonths.slice(-24) : allMonths;
 
+  const booksKey = t("nav.books");
+  const moviesKey = t("nav.movies");
+  const dramasKey = t("nav.dramas");
+
   const monthlyData = displayMonths.map((m) => ({
-    month: period === "yearly" ? `${parseInt(m.slice(5))}月` : m.slice(5),
-    本: stats.books.byMonth[m] ?? 0,
-    映画: stats.movies.byMonth[m] ?? 0,
-    ドラマ: stats.dramas.byMonth[m] ?? 0,
+    month: period === "yearly"
+      ? t("dashboard.monthUnit", { n: parseInt(m.slice(5)) })
+      : m.slice(5),
+    [booksKey]: stats.books.byMonth[m] ?? 0,
+    [moviesKey]: stats.movies.byMonth[m] ?? 0,
+    [dramasKey]: stats.dramas.byMonth[m] ?? 0,
   }));
 
   const barChartTitle = period === "monthly"
-    ? `${year}年${month}月の完了数`
+    ? t("dashboard.chartMonthly", { year, month })
     : period === "yearly"
-    ? `${year}年 月別完了数`
-    : "月別完了数（直近24ヶ月）";
+    ? t("dashboard.chartYearly", { year })
+    : t("dashboard.chartAll");
 
-  const totalLabel = period === "all" ? "登録合計" : `${periodLabel}の登録数`;
+  const totalLabel = period === "all"
+    ? t("dashboard.totalAll")
+    : t("dashboard.totalPeriod", { period: periodLabel });
+
+  const pieCharts = [
+    { label: t("dashboard.booksStatus"), data: booksByStatus },
+    { label: t("dashboard.moviesStatus"), data: moviesByStatus },
+    { label: t("dashboard.dramasStatus"), data: dramasByStatus },
+  ];
+
+  const genreCharts = [
+    { label: t("dashboard.booksGenre"), data: booksByGenre, color: "#6366f1" },
+    { label: t("dashboard.moviesGenre"), data: moviesByGenre, color: "#22c55e" },
+    { label: t("dashboard.dramasGenre"), data: dramasByGenre, color: "#f59e0b" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -182,7 +205,7 @@ export default function DashboardPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <Share2 size={14} />
-          共有
+          {t("content.share")}
         </button>
       </div>
 
@@ -191,14 +214,12 @@ export default function DashboardPage() {
         onChangePeriod={setPeriod} onChangeYear={setYear} onChangeMonth={setMonth}
       />
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={BookOpen} label={`本（${totalLabel}）`} value={stats.books.total} color="bg-indigo-500" />
-        <StatCard icon={Film} label={`映画（${totalLabel}）`} value={stats.movies.total} color="bg-emerald-500" />
-        <StatCard icon={Tv} label={`ドラマ（${totalLabel}）`} value={stats.dramas.total} color="bg-amber-500" />
+        <StatCard icon={BookOpen} label={t("dashboard.booksCount", { label: totalLabel })} value={stats.books.total} color="bg-indigo-500" />
+        <StatCard icon={Film} label={t("dashboard.moviesCount", { label: totalLabel })} value={stats.movies.total} color="bg-emerald-500" />
+        <StatCard icon={Tv} label={t("dashboard.dramasCount", { label: totalLabel })} value={stats.dramas.total} color="bg-amber-500" />
       </div>
 
-      {/* Bar chart */}
       {monthlyData.length > 0 && (
         <div className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm font-semibold mb-4">{barChartTitle}</h3>
@@ -208,21 +229,16 @@ export default function DashboardPage() {
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="本" fill="#6366f1" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="映画" fill="#22c55e" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="ドラマ" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={booksKey} fill="#6366f1" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={moviesKey} fill="#22c55e" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={dramasKey} fill="#f59e0b" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* Pie charts */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "本 ステータス分布", data: booksByStatus },
-          { label: "映画 ステータス分布", data: moviesByStatus },
-          { label: "ドラマ ステータス分布", data: dramasByStatus },
-        ].map(({ label, data }) => (
+        {pieCharts.map(({ label, data }) => (
           data.length > 0 && (
             <div key={label} className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-semibold mb-3">{label}</h3>
@@ -240,12 +256,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Genre distribution charts */}
-      {[
-        { label: "本 ジャンル分布", data: booksByGenre, color: "#6366f1" },
-        { label: "映画 ジャンル分布", data: moviesByGenre, color: "#22c55e" },
-        { label: "ドラマ ジャンル分布", data: dramasByGenre, color: "#f59e0b" },
-      ].filter(({ data }) => data.length > 0).map(({ label, data, color }) => (
+      {genreCharts.filter(({ data }) => data.length > 0).map(({ label, data, color }) => (
         <div key={label} className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
           <h3 className="text-sm font-semibold mb-4">{label}</h3>
           <ResponsiveContainer width="100%" height={Math.max(120, data.length * 28)}>

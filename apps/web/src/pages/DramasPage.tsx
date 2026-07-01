@@ -74,6 +74,10 @@ export default function DramasPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dramas"] }),
   });
 
+  const handleDelete = (d: Drama) => {
+    if (confirm(t("content.deleteConfirm", { title: d.title }))) deleteMutation.mutate(d.id);
+  };
+
   return (
     <div className="space-y-4">
       {shareOpen && <ShareModal type="rating" onClose={() => setShareOpen(false)} />}
@@ -85,14 +89,14 @@ export default function DramasPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Share2 size={14} />
-            共有
+            {t("content.share")}
           </button>
           <button
             onClick={() => setGroupBySeries((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors ${groupBySeries ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900 border-transparent" : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
           >
             {groupBySeries ? <List size={15} /> : <Layers size={15} />}
-            {groupBySeries ? "一覧表示" : "シリーズ別"}
+            {groupBySeries ? t("content.listView") : t("content.groupedView")}
           </button>
           <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2">
             <Plus size={16} /> {t("common.add")}
@@ -104,7 +108,7 @@ export default function DramasPage() {
         <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="input w-auto text-sm">
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s ? t(`drama.statuses.${s}`) : "すべてのステータス"}</option>
+            <option key={s} value={s}>{s ? t(`drama.statuses.${s}`) : t("content.allStatuses")}</option>
           ))}
         </select>
       </div>
@@ -115,7 +119,7 @@ export default function DramasPage() {
         <div className="space-y-2">
           {Array.from(seriesGroups.entries()).map(([seriesKey, dramas]) => {
             if (seriesKey === "__none__") {
-              return dramas.map((drama) => <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={(d) => { if (confirm(`「${d.title}」を削除しますか？`)) deleteMutation.mutate(d.id); }} t={t} />);
+              return dramas.map((drama) => <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={handleDelete} t={t} />);
             }
             const isExpanded = expandedSeries.has(seriesKey);
             return (
@@ -127,33 +131,33 @@ export default function DramasPage() {
                   <CoverImage src={dramas[0]?.coverImageUrl} alt={seriesKey} className="w-8 h-11" />
                   <ChevronRight size={14} className={`text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                   <span className="text-sm font-semibold flex-1 text-gray-800 dark:text-gray-200">{seriesKey}</span>
-                  <span className="text-xs text-gray-400">{dramas.length}作品</span>
+                  <span className="text-xs text-gray-400">{t("content.works", { n: dramas.length })}</span>
                 </button>
                 {isExpanded && (
                   <div className="mt-1 ml-4 space-y-1">
-                    {dramas.map((drama) => <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={(d) => { if (confirm(`「${d.title}」を削除しますか？`)) deleteMutation.mutate(d.id); }} t={t} />)}
+                    {dramas.map((drama) => <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={handleDelete} t={t} />)}
                   </div>
                 )}
               </div>
             );
           })}
-          {(data?.data ?? []).length === 0 && <p className="text-sm text-gray-400 py-8 text-center">登録されたドラマがありません</p>}
+          {(data?.data ?? []).length === 0 && <p className="text-sm text-gray-400 py-8 text-center">{t("content.noDramasRegistered")}</p>}
         </div>
       ) : (
         <div className="space-y-2">
           {(data?.data ?? []).map((drama) => (
-            <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={(d) => { if (confirm(`「${d.title}」を削除しますか？`)) deleteMutation.mutate(d.id); }} t={t} />
+            <DramaRow key={drama.id} drama={drama} onEdit={setEditing} onDelete={handleDelete} t={t} />
           ))}
-          {(data?.data?.length ?? 0) === 0 && <p className="text-sm text-gray-400 py-8 text-center">登録されたドラマがありません</p>}
+          {(data?.data?.length ?? 0) === 0 && <p className="text-sm text-gray-400 py-8 text-center">{t("content.noDramasRegistered")}</p>}
         </div>
       )}
 
       {data && !groupBySeries && <Pagination page={page} total={data.total} perPage={data.perPage} onChange={setPage} />}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="ドラマを追加" size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={t("content.addDrama")} size="lg">
         <DramaForm onSubmit={(d) => createMutation.mutate(d)} onCancel={() => setModalOpen(false)} loading={createMutation.isPending} />
       </Modal>
-      <Modal open={!!editing} onClose={() => setEditing(null)} title="ドラマを編集" size="lg">
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={t("content.editDrama")} size="lg">
         {editing && <DramaForm initial={editing} onSubmit={(d) => updateMutation.mutate({ id: editing.id, data: d })} onCancel={() => setEditing(null)} loading={updateMutation.isPending} />}
       </Modal>
     </div>
@@ -169,7 +173,7 @@ function DramaRow({ drama, onEdit, onDelete, t }: { drama: Drama; onEdit: (d: Dr
           <div>
             <p className="font-medium text-sm">{drama.title}</p>
             {drama.seriesName && <p className="text-xs text-gray-500">{drama.seriesName}</p>}
-            {drama.totalSeasons && <p className="text-xs text-gray-400 mt-0.5">{drama.totalSeasons}シーズン</p>}
+            {drama.totalSeasons && <p className="text-xs text-gray-400 mt-0.5">{t("content.seasonCount", { n: drama.totalSeasons })}</p>}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {drama.currentSeason && (drama.status === "watching" || drama.status === "dropped") && (

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { usersApi, sharingApi } from "../../lib/api/misc";
 import Modal from "./Modal";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function ShareModal({ type, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -49,11 +51,8 @@ export default function ShareModal({ type, onClose }: Props) {
     }
   };
 
-  const title = type === "dashboard" ? "ダッシュボードを共有" : "評価を共有";
-  const desc =
-    type === "dashboard"
-      ? "ONにしたユーザーはあなたのダッシュボードを閲覧できます"
-      : "ONにしたユーザーにあなたの評価が共有されます（書籍・映画・ドラマ）";
+  const title = type === "dashboard" ? t("shareModal.dashboardTitle") : t("shareModal.ratingTitle");
+  const desc = type === "dashboard" ? t("shareModal.dashboardDesc") : t("shareModal.ratingDesc");
 
   return (
     <Modal open onClose={onClose} title={title} size="sm">
@@ -64,14 +63,14 @@ export default function ShareModal({ type, onClose }: Props) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="ユーザー名で検索..."
+          placeholder={t("shareModal.searchPlaceholder")}
           className="input pl-8 w-full text-sm"
         />
       </div>
       {!search.trim() ? (
-        <p className="text-sm text-gray-400 text-center py-4">ユーザー名を入力して検索してください</p>
+        <p className="text-sm text-gray-400 text-center py-4">{t("shareModal.searchHint")}</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4">ユーザーが見つかりません</p>
+        <p className="text-sm text-gray-400 text-center py-4">{t("shareModal.noUser")}</p>
       ) : (
         <div className="space-y-2">
           {filtered.map((u) => {
@@ -90,7 +89,7 @@ export default function ShareModal({ type, onClose }: Props) {
                       : "border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
-                  {shared ? "共有中" : "共有する"}
+                  {shared ? t("shareModal.sharing") : t("shareModal.share")}
                 </button>
               </div>
             );
