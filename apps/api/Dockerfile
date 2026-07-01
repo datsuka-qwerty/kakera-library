@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /kakera-api ./cmd/server
 
 FROM alpine:3.20
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata postgresql-client
 WORKDIR /app
 COPY --from=builder /kakera-api .
 COPY db/migrations ./db/migrations
