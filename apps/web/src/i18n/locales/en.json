@@ -49,7 +49,13 @@
     "add": "Add",
     "search": "Search",
     "loading": "Loading...",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "back": "Back"
+  },
+  "sharedDashboard": {
+    "title": "{{username}}'s Dashboard",
+    "error": "Cannot view this dashboard. It may not be shared with you.",
+    "chartTitle": "Monthly Content (Last 12 Months)"
   },
   "settings": {
     "profile": "Profile",
@@ -70,7 +76,7 @@
     "changeImage": "Change Image",
     "username": "Username",
     "newPassword": "New Password (only if changing)",
-    "languageTitle": "言語 / Language",
+    "languageTitle": "Language",
     "apply": "Apply",
     "languageChanged": "Language changed"
   },

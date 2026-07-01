@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { sharingApi } from "../lib/api/misc";
 
 export default function SharingPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -17,18 +19,17 @@ export default function SharingPage() {
 
   return (
     <div className="space-y-8 max-w-md">
-      <h2 className="text-xl font-bold">共有</h2>
+      <h2 className="text-xl font-bold">{t("nav.sharing")}</h2>
 
-      {/* 自分が共有しているユーザー */}
       <section className="space-y-5">
         <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-          あなたが共有しているユーザー
+          {t("sharing.outgoingTitle")}
         </h3>
 
         <div>
-          <p className="text-sm font-medium mb-2">ダッシュボード</p>
+          <p className="text-sm font-medium mb-2">{t("sharing.dashboard")}</p>
           {activeDashShares.length === 0 ? (
-            <p className="text-sm text-gray-400">共有していません</p>
+            <p className="text-sm text-gray-400">{t("sharing.noOutgoing")}</p>
           ) : (
             <div className="space-y-2">
               {activeDashShares.map((s) => (
@@ -41,7 +42,7 @@ export default function SharingPage() {
                     }}
                     className="text-xs text-red-400 hover:text-red-600"
                   >
-                    削除
+                    {t("common.delete")}
                   </button>
                 </div>
               ))}
@@ -50,9 +51,9 @@ export default function SharingPage() {
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">評価</p>
+          <p className="text-sm font-medium mb-2">{t("sharing.rating")}</p>
           {activeRatingShares.length === 0 ? (
-            <p className="text-sm text-gray-400">共有していません</p>
+            <p className="text-sm text-gray-400">{t("sharing.noOutgoing")}</p>
           ) : (
             <div className="space-y-2">
               {activeRatingShares.map((s) => (
@@ -65,7 +66,7 @@ export default function SharingPage() {
                     }}
                     className="text-xs text-red-400 hover:text-red-600"
                   >
-                    削除
+                    {t("common.delete")}
                   </button>
                 </div>
               ))}
@@ -73,23 +74,20 @@ export default function SharingPage() {
           )}
         </div>
 
-        <p className="text-xs text-gray-400">
-          各ページの「共有」ボタンから追加できます
-        </p>
+        <p className="text-xs text-gray-400">{t("sharing.addHint")}</p>
       </section>
 
       <hr className="border-gray-200 dark:border-gray-700" />
 
-      {/* 自分に共有してくれているユーザー */}
       <section className="space-y-5">
         <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-          あなたへの共有
+          {t("sharing.incomingTitle")}
         </h3>
 
         <div>
-          <p className="text-sm font-medium mb-2">ダッシュボード</p>
+          <p className="text-sm font-medium mb-2">{t("sharing.dashboard")}</p>
           {receivedDash.length === 0 ? (
-            <p className="text-sm text-gray-400">共有されていません</p>
+            <p className="text-sm text-gray-400">{t("sharing.noIncoming")}</p>
           ) : (
             <div className="space-y-2">
               {receivedDash.map((s) => (
@@ -99,7 +97,7 @@ export default function SharingPage() {
                     onClick={() => navigate(`/dashboard/shared/${encodeURIComponent(s.username)}`)}
                     className="text-xs text-blue-500 hover:underline"
                   >
-                    ダッシュボードを見る →
+                    {t("sharing.viewDashboard")}
                   </button>
                 </div>
               ))}
@@ -108,9 +106,9 @@ export default function SharingPage() {
         </div>
 
         <div>
-          <p className="text-sm font-medium mb-2">評価</p>
+          <p className="text-sm font-medium mb-2">{t("sharing.rating")}</p>
           {receivedRating.length === 0 ? (
-            <p className="text-sm text-gray-400">共有されていません</p>
+            <p className="text-sm text-gray-400">{t("sharing.noIncoming")}</p>
           ) : (
             <div className="space-y-2">
               {receivedRating.map((s) => (

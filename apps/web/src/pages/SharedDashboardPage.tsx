@@ -40,9 +40,9 @@ export default function SharedDashboardPage() {
     return (
       <div className="space-y-4">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <ArrowLeft size={16} /> 戻る
+          <ArrowLeft size={16} /> {t("common.back")}
         </button>
-        <p className="text-sm text-red-500">ダッシュボードを閲覧できません。共有が許可されていない可能性があります。</p>
+        <p className="text-sm text-red-500">{t("sharedDashboard.error")}</p>
       </div>
     );
   }
@@ -63,12 +63,22 @@ export default function SharedDashboardPage() {
     ...Object.keys(stats.dramas.byMonth),
   ])).sort();
 
+  const booksKey = t("nav.books");
+  const moviesKey = t("nav.movies");
+  const dramasKey = t("nav.dramas");
+
   const monthlyData = allMonths.slice(-12).map((month) => ({
     month: month.slice(5),
-    本: stats.books.byMonth[month] ?? 0,
-    映画: stats.movies.byMonth[month] ?? 0,
-    ドラマ: stats.dramas.byMonth[month] ?? 0,
+    [booksKey]: stats.books.byMonth[month] ?? 0,
+    [moviesKey]: stats.movies.byMonth[month] ?? 0,
+    [dramasKey]: stats.dramas.byMonth[month] ?? 0,
   }));
+
+  const statusCharts = [
+    { label: t("dashboard.booksStatus"), data: booksByStatus },
+    { label: t("dashboard.moviesStatus"), data: moviesByStatus },
+    { label: t("dashboard.dramasStatus"), data: dramasByStatus },
+  ];
 
   return (
     <div className="space-y-6">
@@ -77,40 +87,36 @@ export default function SharedDashboardPage() {
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          <ArrowLeft size={16} /> 戻る
+          <ArrowLeft size={16} /> {t("common.back")}
         </button>
-        <h2 className="text-xl font-bold">{username} のダッシュボード</h2>
+        <h2 className="text-xl font-bold">{t("sharedDashboard.title", { username })}</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={BookOpen} label="本（合計）" value={stats.books.total} color="bg-indigo-500" />
-        <StatCard icon={Film} label="映画（合計）" value={stats.movies.total} color="bg-emerald-500" />
-        <StatCard icon={Tv} label="ドラマ（合計）" value={stats.dramas.total} color="bg-amber-500" />
+        <StatCard icon={BookOpen} label={t("dashboard.booksCount", { label: t("dashboard.totalAll") })} value={stats.books.total} color="bg-indigo-500" />
+        <StatCard icon={Film} label={t("dashboard.moviesCount", { label: t("dashboard.totalAll") })} value={stats.movies.total} color="bg-emerald-500" />
+        <StatCard icon={Tv} label={t("dashboard.dramasCount", { label: t("dashboard.totalAll") })} value={stats.dramas.total} color="bg-amber-500" />
       </div>
 
       {monthlyData.length > 0 && (
         <div className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold mb-4">月別コンテンツ数（直近12ヶ月）</h3>
+          <h3 className="text-sm font-semibold mb-4">{t("sharedDashboard.chartTitle")}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={monthlyData}>
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="本" fill="#6366f1" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="映画" fill="#22c55e" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="ドラマ" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={booksKey} fill="#6366f1" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={moviesKey} fill="#22c55e" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={dramasKey} fill="#f59e0b" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "本 ステータス分布", data: booksByStatus },
-          { label: "映画 ステータス分布", data: moviesByStatus },
-          { label: "ドラマ ステータス分布", data: dramasByStatus },
-        ].map(({ label, data }) => (
+        {statusCharts.map(({ label, data }) => (
           data.length > 0 && (
             <div key={label} className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">
               <h3 className="text-sm font-semibold mb-3">{label}</h3>
