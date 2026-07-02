@@ -138,18 +138,42 @@ server {
 
 ---
 
-## APIキー
+## API Keys
 
-**Google Books API**（書籍メタデータおよびISBN検索）:
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセスして「Books API」を有効化する
-2. APIキーを作成し、`.env` の `GOOGLE_BOOKS_API_KEY` に設定する
+Both keys are optional. The app runs without them, but metadata search results will be limited.
 
-**TMDB API**（映画・ドラマメタデータ）:
-1. [themoviedb.org](https://www.themoviedb.org/) で無料アカウントを作成する
-2. 設定 → API → APIキーを申請する
-3. キーを `.env` の `TMDB_API_KEY` に設定する
+### Google Books API
 
-> TMDBのクレジット表示は利用規約で必須です。Web UIは自動的にTMDBクレジットを表示します。
+Used for book metadata lookup and ISBN barcode search.
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) and sign in
+2. Create a new project or select an existing one
+3. Go to **APIs & Services → Library**, search for **Books API**, and click **Enable**
+4. Go to **APIs & Services → Credentials → + Create Credentials → API key**
+5. *(Recommended)* Under **API restrictions**, select **Restrict key** and choose **Books API**
+6. Copy the key and set it in `.env`:
+
+```env
+GOOGLE_BOOKS_API_KEY=AIza...
+```
+
+### TMDB API
+
+Used for movie and TV drama metadata, posters, and cast information.
+
+1. Create a free account at [themoviedb.org](https://www.themoviedb.org/signup)
+2. Go to your account **Settings → API**
+3. Under **Request an API Key**, click **Create** and choose **Developer**
+4. Complete the application form — use your repository URL as the application URL
+5. Copy the **API Key** labeled **v3 auth** — not the v4 Read Access Token
+6. Set it in `.env`:
+
+```env
+TMDB_API_KEY=...
+```
+
+> **TMDB attribution is required by their Terms of Use.**
+> The web UI automatically displays TMDB credit on all movie and drama pages.
 
 ---
 
@@ -240,10 +264,10 @@ i18n.use(initReactI18next).init({
 });
 ```
 
-**4. 言語セレクタに追加します** — `apps/web/src/pages/SettingsPage.tsx`
+**4. 言語セレクタに追加します** — `apps/web/src/lib/languages.ts`
 
 ```ts
-const LANGUAGES = [
+export const LANGUAGES = [
   { code: "ja", label: "日本語", sublabel: "Japanese" },
   { code: "en", label: "English", sublabel: "英語" },
   { code: "zh", label: "中文", sublabel: "Chinese" },  // ここに追加
