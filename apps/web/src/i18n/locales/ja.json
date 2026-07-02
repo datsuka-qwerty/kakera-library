@@ -15,7 +15,7 @@
     "error": "ユーザー名またはパスワードが正しくありません",
     "noAccount": "アカウントをお持ちでない方は",
     "signUp": "新規登録",
-    "language": "言語 / Language"
+    "language": "言語"
   },
   "register": {
     "title": "新規アカウント登録",

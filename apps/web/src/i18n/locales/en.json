@@ -15,7 +15,7 @@
     "error": "Invalid username or password",
     "noAccount": "Don't have an account?",
     "signUp": "Sign Up",
-    "language": "言語 / Language"
+    "language": "Language"
   },
   "register": {
     "title": "Create Account",
