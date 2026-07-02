@@ -4,11 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { apiClient } from "../lib/apiClient";
 import { serverSettingsApi } from "../lib/api/misc";
-
-const LANGUAGES: { code: string; label: string }[] = [
-  { code: "ja", label: "日本語" },
-  { code: "en", label: "English" },
-];
+import { LANGUAGES } from "../lib/languages";
 
 export default function LoginPage() {
   const { t, i18n } = useTranslation();

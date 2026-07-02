@@ -5,6 +5,10 @@ COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 COPY apps/mobile/package.json ./apps/mobile/
+# --ignore-scripts: blocks Expo's native postinstall scripts that fail on Alpine.
+# esbuild and rollup ship platform-specific native binaries as optional packages;
+# the lockfile only has win32 entries (generated on Windows), so we install the
+# linux-x64-musl variants explicitly here for Alpine.
 RUN npm install --ignore-scripts && \
     ESBUILD_VER=$(node -p "require('./node_modules/esbuild/package.json').version") && \
     ROLLUP_VER=$(node -p "require('./node_modules/rollup/package.json').version") && \
@@ -23,6 +27,7 @@ COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 # redirect pid to /tmp (writable by non-root), fix directory ownership
 RUN sed -i '/^user /d' /etc/nginx/nginx.conf \
  && sed -i 's|/var/run/nginx\.pid|/tmp/nginx.pid|' /etc/nginx/nginx.conf \
+ && sed -i 's|/run/nginx\.pid|/tmp/nginx.pid|' /etc/nginx/nginx.conf \
  && chown -R nginx:nginx \
       /usr/share/nginx/html \
       /var/cache/nginx \

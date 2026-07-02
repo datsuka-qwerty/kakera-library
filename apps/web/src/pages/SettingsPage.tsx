@@ -8,16 +8,13 @@ import { mediaTypesApi, sharingApi, backupApi, usersApi, exportImportApi, server
 import type { ImportResult } from "../lib/api/misc";
 import { getMediaTypeName } from "../lib/mediaTypeLabels";
 import { useAuthStore } from "../store/authStore";
+import { LANGUAGES } from "../lib/languages";
 import Modal from "../components/ui/Modal";
 import clsx from "clsx";
 
 type Tab = "profile" | "security" | "sharing" | "mediaTypes" | "data" | "backup" | "users" | "server";
 
 const CATEGORIES = ["book", "movie", "drama"] as const;
-const LANGUAGES: { code: string; label: string; sublabel: string }[] = [
-  { code: "ja", label: "日本語", sublabel: "Japanese" },
-  { code: "en", label: "English", sublabel: "英語" },
-];
 
 export default function SettingsPage() {
   const { t } = useTranslation();
