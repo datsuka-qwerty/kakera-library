@@ -1,8 +1,8 @@
 # Kakera Library
 
-人生で触れてきたコンテンツのカケラを集約する、セルフホスト型ライブラリ管理システム。
+A self-hosted library management system to collect and track the content you've experienced in life.
 
-本・映画・ドラマの記録、評価、共有をひとつの場所で管理できます。
+Books, movies, and TV dramas — ratings, notes, and sharing — all in one place.
 
 > This product uses the TMDB API but is not endorsed or certified by TMDB.
 
@@ -10,16 +10,16 @@
 
 ## Features
 
-- 📚 蔵書管理（本・シリーズ・所有状態・読書ステータス・ISBNバーコードスキャン）
-- 🎬 映画管理（視聴媒体・シリーズ管理・TMDB連携）
-- 📺 ドラマ管理（シーズン・視聴進捗）
-- ⭐ 5段階評価・タグ・メモ
-- 👥 マルチユーザー・ダッシュボード共有・評価共有（一方向）
-- 📊 ダッシュボード・月別統計・ステータス分布
-- 📱 Web・Android・iOS（React Native + Expo）
-- 🐳 Docker Composeによるセルフホスト
-- 🔐 JWT認証+TOTP（Google Authenticator）オプション
-- 💾 自動バックアップ・エクスポート/インポート（JSON）
+- 📚 Book management — series, ownership status, reading status, ISBN barcode scan
+- 🎬 Movie management — viewing format, series grouping, TMDB integration
+- 📺 TV drama management — seasons and viewing progress
+- ⭐ 5-star ratings, tags, and notes
+- 👥 Multi-user support with dashboard sharing and one-way rating visibility
+- 📊 Dashboard with monthly statistics and status distribution charts
+- 📱 Web + Android + iOS via React Native + Expo
+- 🐳 Self-hosted via Docker Compose
+- 🔐 JWT authentication with optional TOTP via Google Authenticator
+- 💾 Automatic backups and JSON export/import
 
 ## Tech Stack
 
@@ -29,83 +29,83 @@
 | Web | React 18 + TypeScript + Vite + TailwindCSS |
 | Mobile | React Native + Expo SDK 51 |
 | Database | PostgreSQL 16 |
-| Auth | JWT（15m access / 7d refresh）+ TOTP |
+| Auth | JWT + TOTP — 15m access token / 7d refresh token |
 | Metadata | Google Books API + TMDB API |
 | Infra | Docker Compose |
 
 ---
 
-## 始め方
+## Getting Started
 
-### 必要な環境
+### Prerequisites
 
 - Docker Compose v2
 
-### 1. クローン
+### 1. Clone
 
 ```bash
 git clone https://github.com/datsuka-qwerty/kakera-library.git
 cd kakera-library
 ```
 
-### 2. 環境変数の設定
+### 2. Configure Environment Variables
 
-リポジトリルートに `.env` ファイルを作成します。
+Create a `.env` file in the repository root:
 
 ```env
-# 必須 — 生成コマンド: openssl rand -hex 32
+# Required — generate with: openssl rand -hex 32
 JWT_SECRET=your-very-long-random-secret-here
 
-# データベースパスワード（ローカル以外の環境では変更してください）
+# Database password — change this for non-local deployments
 POSTGRES_PASSWORD=change-me
 
-# 省略可能 — なくてもメタデータ検索は動作しますが、結果が制限されます
+# Optional — the app works without these, but metadata search will be limited
 GOOGLE_BOOKS_API_KEY=
 TMDB_API_KEY=
 
-# Web UIのポート番号（デフォルト: 3000）
+# Web UI port, default: 3000
 # WEB_PORT=3000
 
-# リバースプロキシを使う場合はドメインを設定します
+# Set your domain when using a reverse proxy
 # CORS_ORIGIN=https://kakera.yourdomain.com
 ```
 
-> **`.env` はバージョン管理に含めないでください。** `.gitignore` に登録済みです。
+> **Do not commit `.env` to version control.** It is already listed in `.gitignore`.
 
-### 3. ビルドと起動
+### 3. Build and Start
 
 ```bash
 docker compose up -d --build
 ```
 
-起動するサービスは以下の3つです。
+Three services will start:
 
-| サービス | 役割 | 外部ポート |
-|---------|------|-----------|
-| `postgres` | PostgreSQLデータベース | なし（内部のみ） |
-| `api` | Go REST API | なし（nginx経由） |
-| `web` | nginx（React配信・APIプロキシ） | `WEB_PORT`（デフォルト **3000**） |
+| Service | Role | External Port |
+|---------|------|--------------|
+| `postgres` | PostgreSQL database | None — internal only |
+| `api` | Go REST API | None — proxied via nginx |
+| `web` | nginx: React frontend + API proxy | `WEB_PORT`, default **3000** |
 
-### 4. 初期セットアップ
+### 4. Initial Setup
 
-ブラウザで **http://localhost:3000** を開きます。
-初回アクセス時に管理者アカウントを作成するページが表示されます。
-追加ユーザーは **設定 → ユーザー管理** から作成できます（管理者のみ）。
+Open **http://localhost:3000** in your browser.
+On first access you will be prompted to create an administrator account.
+Additional users can be created from **Settings → User Management** — admin only.
 
 ---
 
-## 永続化データ
+## Persistent Data
 
-Docker Composeが自動的に作成するボリュームは以下の2つです。
+Docker Compose automatically creates two volumes:
 
-| ボリューム | マウント先 | 内容 | 削除した場合の影響 |
-|-----------|-----------|------|-----------------|
-| `postgres_data` | `/var/lib/postgresql/data` | すべてのデータ（本・映画・ドラマ・ユーザー・設定） | **データが完全に失われます** |
-| `backups` | `/backups` | バックアップ機能が作成するスナップショット（`.sql.gz`） | バックアップ履歴が失われます |
+| Volume | Mount | Contents | If removed |
+|--------|-------|----------|-----------|
+| `postgres_data` | `/var/lib/postgresql/data` | All data: books, movies, dramas, users, settings | **All data is permanently lost** |
+| `backups` | `/backups` | Snapshots created by the backup feature — `.sql.gz` | Backup history is lost |
 
-> `docker compose down` はボリュームを保持します。`docker compose down -v` は**削除します**。
+> `docker compose down` preserves volumes. `docker compose down -v` **deletes them**.
 
-バックアップをホスト上のディレクトリに保存する場合は、`docker-compose.yml` のボリューム設定を変更してください。
+To save backups to a host directory, update the volume config in `docker-compose.yml`:
 
 ```yaml
 volumes:
@@ -114,10 +114,11 @@ volumes:
 
 ---
 
-## リバースプロキシ
+## Reverse Proxy
 
-各種リバースプロキシ（nginx、Caddy、Traefikなど）を経由して公開する場合は、すべてのトラフィックを `web` コンテナに転送します。
-`/api/*` のAPI転送は `web` コンテナ内のnginxが自動的に処理します。
+To expose the app through a reverse proxy such as nginx, Caddy, or Traefik,
+forward all traffic to the `web` container.
+API routing for `/api/*` is handled automatically by the nginx inside the container.
 
 ```nginx
 server {
@@ -134,7 +135,7 @@ server {
 }
 ```
 
-リバースプロキシを使う場合は `.env` に `CORS_ORIGIN=https://kakera.yourdomain.com` を設定してください。
+When using a reverse proxy, also set `CORS_ORIGIN=https://kakera.yourdomain.com` in `.env`.
 
 ---
 
@@ -150,7 +151,7 @@ Used for book metadata lookup and ISBN barcode search.
 2. Create a new project or select an existing one
 3. Go to **APIs & Services → Library**, search for **Books API**, and click **Enable**
 4. Go to **APIs & Services → Credentials → + Create Credentials → API key**
-5. *(Recommended)* Under **API restrictions**, select **Restrict key** and choose **Books API**
+5. **Recommended:** Under **API restrictions**, select **Restrict key** and choose **Books API**
 6. Copy the key and set it in `.env`:
 
 ```env
@@ -177,13 +178,14 @@ TMDB_API_KEY=...
 
 ---
 
-## モバイル
+## Mobile
 
 ### Android
 
-各 [GitHub Release](../../releases) にAPKが添付されています。`.apk` をダウンロードしてインストールしてください。
+APK files are attached to each [GitHub Release](../../releases).
+Download and install the `.apk` directly on your device.
 
-ソースからビルドする場合:
+To build from source:
 
 ```bash
 npm install
@@ -192,7 +194,7 @@ cd apps/mobile && npx expo run:android
 
 ### iOS
 
-iOSのビルドにはEAS（Expo Application Services）が必要です。
+Building for iOS requires EAS — Expo Application Services.
 
 ```bash
 npm install -g eas-cli
@@ -202,40 +204,40 @@ eas build --platform ios --profile preview
 
 ---
 
-## バックアップと復元
+## Backup & Restore
 
-バックアップは **設定 → バックアップ** から管理します（管理者のみ）。
+Manage backups from **Settings → Backup** — admin only.
 
-- **自動バックアップ** — 間隔と保持スナップショット数の設定
-- **手動バックアップ** — `Backup Now` ボタンで実行
-- **復元** — スナップショットを選択して `Restore` から実行
-- スナップショットは `backup_YYYYMMDD_HHMMSS.sql.gz` 形式で `backups` ボリュームに保存
+- **Automatic backup** — configure interval and number of snapshots to retain
+- **Manual backup** — run immediately with the `Backup Now` button
+- **Restore** — select a snapshot and click `Restore`
+- Snapshots are stored as `backup_YYYYMMDD_HHMMSS.sql.gz` in the `backups` volume
 
-**エクスポート/インポート（JSON）**:
-すべてのユーザーが **設定 → データ** から自分のデータをエクスポートできます。
-エクスポートしたデータは別のインスタンスにインポートできます。
+**Export / Import via JSON:**
+Any user can export their data from **Settings → Data**.
+Exported data can be imported into another instance.
 
 ---
 
 ## Contributing
 
-翻訳の追加を特に歓迎します。
+Translation contributions are especially welcome.
 
-### 翻訳への参加
+### Adding a Translation
 
-Webフロントエンドおよびモバイル版はどちらもi18nextを使用しています。
-現在対応している言語: 🇯🇵 日本語（`ja`）· 🇺🇸 英語（`en`）
+Both the web frontend and mobile app use i18next for internationalization.
+Currently supported: 🇯🇵 Japanese — `ja` · 🇺🇸 English — `en`
 
-#### Web版への言語追加
+#### Web
 
-**1. 英語ロケールファイルをコピーします**
+**1. Copy the English locale file**
 
 ```bash
 cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/<lang>.json
-# 例: cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/zh.json
+# Example: cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/zh.json
 ```
 
-**2. 値をすべて翻訳します** — キーは変更しないでください
+**2. Translate all values** — do not change the keys
 
 ```json
 {
@@ -247,57 +249,58 @@ cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/<lang>.json
 }
 ```
 
-`{{username}}`・`{{n}}` などのプレースホルダーはそのまま残してください。
+Keep placeholders such as `{{username}}` and `{{n}}` unchanged.
 
-**3. ロケールを登録します** — `apps/web/src/i18n/index.ts`
+**3. Register the locale** — `apps/web/src/i18n/index.ts`
 
 ```ts
-import zh from "./locales/zh.json";  // インポートを追加
+import zh from "./locales/zh.json";  // add import
 
 i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     ja: { translation: ja },
-    zh: { translation: zh },  // ここに追加
+    zh: { translation: zh },  // add here
   },
   ...
 });
 ```
 
-**4. 言語セレクタに追加します** — `apps/web/src/lib/languages.ts`
+**4. Add to the language selector** — `apps/web/src/lib/languages.ts`
 
 ```ts
 export const LANGUAGES = [
   { code: "ja", label: "日本語", sublabel: "Japanese" },
-  { code: "en", label: "English", sublabel: "英語" },
-  { code: "zh", label: "中文", sublabel: "Chinese" },  // ここに追加
+  { code: "en", label: "English", sublabel: "English" },
+  { code: "zh", label: "中文", sublabel: "Chinese" },  // add here
 ];
 ```
 
-#### モバイル版への言語追加
+#### Mobile
 
-モバイルの翻訳はすべて `apps/mobile/lib/i18n.ts` の1ファイルに集約されています。
-既存の `ja`・`en` オブジェクトと同じ構造で新しい言語オブジェクトを追加し、`i18n.init({ resources: { ... } })` に登録してください。
+All mobile translations live in a single file: `apps/mobile/lib/i18n.ts`.
+Add a new language object with the same key structure as the existing `ja` or `en` translations,
+then register it in `i18n.init({ resources: { ... } })`.
 
 #### Tips
 
-- 既存の翻訳のトーン（フレンドリーで簡潔）に合わせること
-- 適切な訳語がない場合は英語のままでかまわない
-- 対象言語の日付・数値の表記規則にしたがうこと
+- Match the tone of existing translations — friendly and concise
+- If no natural translation exists, the English term is acceptable
+- Follow the date and number formatting conventions of the target locale
 
 ---
 
-### Pull Request
+### Pull Requests
 
-#### 開始前に
+#### Before You Start
 
-- **バグ修正**: 原因が明確でない場合は、先にIssueを立てること
-- **新機能**: 実装前にIssueで方針を議論すること
-- **翻訳**: 事前のIssueは不要。そのままPull Requestを送ること
+- **Bug fixes**: If the cause is unclear, open an Issue first
+- **New features**: Discuss the approach in an Issue before implementing
+- **Translations**: No prior Issue needed — open a Pull Request directly
 
-#### チェックリスト
+#### Checklist
 
-- [ ] CIがすべてグリーンであること
+- [ ] CI is fully green
   ```bash
   # Web
   cd apps/web && npm run typecheck
@@ -308,62 +311,62 @@ export const LANGUAGES = [
   # API
   cd apps/api && go build ./... && go vet ./...
   ```
-- [ ] 変更が1つの目的に絞られていること
-- [ ] 無関係なリファクタリングや整理が含まれていないこと
-- [ ] コミットメッセージが以下のフォーマットにしたがっていること
+- [ ] Changes are focused on a single purpose
+- [ ] No unrelated refactoring or cleanup included
+- [ ] Commit messages follow the format below
 
-#### コミットメッセージフォーマット
+#### Commit Message Format
 
 ```
-<type>(<scope>): <短い説明（英語）>
+<type>(<scope>): <short description in English>
 
-例:
+Examples:
 feat(web): add series grouping view for books
 fix(api): correct pagination off-by-one error
 i18n(web): add Chinese (zh) translation
 docs: update reverse proxy example
 ```
 
-タイプ: `feat` · `fix` · `i18n` · `docs` · `refactor` · `test` · `chore`
+Types: `feat` · `fix` · `i18n` · `docs` · `refactor` · `test` · `chore`
 
-#### 送り方
+#### How to Submit
 
-1. リポジトリをForkする
-2. `main` からブランチを作成する: `git checkout -b feat/my-change`
-3. 目的を絞ったコミットを作成する
-4. `main` に向けてPull Requestを作成する
-   - タイトルはコミットメッセージと同じフォーマットで記載すること
-   - 説明には**何を**変更したか、**なぜ**変更したかを記載すること
-   - 翻訳PRの場合は言語名・BCP 47コード・翻訳の完成度を記載すること
+1. Fork the repository
+2. Create a branch from `main`: `git checkout -b feat/my-change`
+3. Make focused commits
+4. Open a Pull Request targeting `main`
+   - Use the commit message format for the PR title
+   - Describe **what** was changed and **why** in the PR body
+   - For translation PRs, include the language name, BCP 47 code, and completion percentage
 
 ---
 
-## ローカル開発
+## Local Development
 
-Dockerを使わない場合の開発環境セットアップです。
+For development without Docker.
 
-### 必要な環境
+### Prerequisites
 
-- Node.js 22+、Go 1.22+
-- PostgreSQL 16（または `docker compose up postgres -d` でコンテナを起動）
+- Node.js 22+ and Go 1.22+
+- PostgreSQL 16, or start a container: `docker compose up postgres -d`
 
-### 起動
+### Start
 
 ```bash
-# Node.js依存パッケージをインストール
+# Install Node.js dependencies
 npm install
 
-# APIの設定
+# Configure the API
 cp apps/api/.env.example apps/api/.env
-# apps/api/.env を編集して DATABASE_URL にローカルのPostgreSQL接続情報を設定
+# Edit apps/api/.env — set DATABASE_URL to your local PostgreSQL connection string
 
-# APIを起動
+# Start the API
 cd apps/api && go run ./cmd/server/main.go
 
-# Webフロントエンドを起動（別ターミナル）
+# Start the web frontend — separate terminal
 cd apps/web && npm run dev
 
-# モバイルを起動（Expo Go経由）
+# Start the mobile app via Expo Go — separate terminal
 cd apps/mobile && npx expo start
 ```
 
@@ -373,5 +376,5 @@ cd apps/mobile && npx expo start
 
 [MIT License](LICENSE)
 
-TMDBメタデータ機能を使用する場合は、TMDBのクレジット表示が必要です。
+If you use the TMDB metadata feature, TMDB attribution is required.
 This product uses the TMDB API but is not endorsed or certified by TMDB.
