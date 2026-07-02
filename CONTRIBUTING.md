@@ -15,7 +15,7 @@ Thank you for your interest in contributing! This document covers how to contrib
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Go 1.22+
 - Docker + Docker Compose
 - (Android) Android Studio or physical device
@@ -47,15 +47,15 @@ cd apps/web && npm run dev
 
 ## Translation Guide
 
-Kakera Library uses [i18next](https://www.i18next.com/) for internationalization. Web translations live in `apps/web/src/i18n/`.
+Kakera Library uses [i18next](https://www.i18next.com/) for internationalization.
 
-### Adding a New Language
+### Adding a New Language（Web）
 
 **1. Create the translation file**
 
 ```bash
-cp apps/web/src/i18n/en.json apps/web/src/i18n/<lang>.json
-# Example: cp apps/web/src/i18n/en.json apps/web/src/i18n/zh.json
+cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/<lang>.json
+# Example: cp apps/web/src/i18n/locales/en.json apps/web/src/i18n/locales/zh.json
 ```
 
 **2. Translate all values**
@@ -77,22 +77,40 @@ Open the new file and translate every value. **Do not change the keys.**
 Edit `apps/web/src/i18n/index.ts`:
 
 ```ts
-import zh from "./zh.json";
+import zh from "./locales/zh.json";
 
-const resources = {
-  en: { translation: en },
-  ja: { translation: ja },
-  zh: { translation: zh },   // add this line
-};
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    ja: { translation: ja },
+    zh: { translation: zh },   // add this line
+  },
+  ...
+});
 ```
 
-**4. Add to the language switcher**
+**4. Add to the language selector**
 
-Edit `apps/web/src/components/Layout.tsx` and add your language to the switcher options.
+Edit `apps/web/src/pages/SettingsPage.tsx` and add your language to the `LANGUAGES` array:
+
+```ts
+const LANGUAGES = [
+  { code: "ja", label: "日本語", sublabel: "Japanese" },
+  { code: "en", label: "English", sublabel: "英語" },
+  { code: "zh", label: "中文", sublabel: "Chinese" },  // add here
+];
+```
 
 **5. Submit a pull request**
 
 See [Pull Request Guidelines](#pull-request-guidelines).
+
+### Adding a New Language (Mobile)
+
+Mobile translations live in a single file: `apps/mobile/lib/i18n.ts`.
+
+Add a new language object to the `resources` block of `i18n.init()`.
+Use the same key structure as the existing `ja` or `en` translations.
 
 ### Translation Tips
 
@@ -121,7 +139,7 @@ Please open a GitHub Issue with:
 
 ### Feature Requests
 
-Open a GitHub Issue describing the feature and your use case before starting implementation, so we can discuss the approach.
+Open a GitHub Issue first to describe the feature and discuss the approach.
 
 ### Coding Guidelines
 
