@@ -5,7 +5,12 @@ COPY package.json package-lock.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 COPY apps/mobile/package.json ./apps/mobile/
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts && \
+    ESBUILD_VER=$(node -p "require('./node_modules/esbuild/package.json').version") && \
+    ROLLUP_VER=$(node -p "require('./node_modules/rollup/package.json').version") && \
+    npm install --ignore-scripts \
+      "@esbuild/linux-x64@${ESBUILD_VER}" \
+      "@rollup/rollup-linux-x64-musl@${ROLLUP_VER}"
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
 RUN npm run build:shared && npm run build:web
