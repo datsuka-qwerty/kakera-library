@@ -66,7 +66,7 @@ export const booksApi = {
   create: (data: BookCreateInput) => api.post<Book>("/books", data),
   update: (id: string, data: Partial<BookCreateInput>) => api.put<Book>(`/books/${id}`, data),
   delete: (id: string) => api.delete(`/books/${id}`),
-  searchMeta: (q: string) => api.get<BookMeta[]>("/metadata/books", { q }),
+  searchMeta: (q: string, page = 1) => api.get<BookMeta[]>("/metadata/books", { q, page }),
   lookupISBN: (isbn: string) => api.get<BookMeta>(`/metadata/barcode/${isbn}`),
 };
 
@@ -75,7 +75,7 @@ export const moviesApi = {
   create: (data: MovieCreateInput) => api.post<Movie>("/movies", data),
   update: (id: string, data: Partial<MovieCreateInput>) => api.put<Movie>(`/movies/${id}`, data),
   delete: (id: string) => api.delete(`/movies/${id}`),
-  searchMeta: (q: string) => api.get<ContentMeta[]>("/metadata/movies", { q }),
+  searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/movies", { q, page }),
 };
 
 export const dramasApi = {
@@ -83,7 +83,7 @@ export const dramasApi = {
   create: (data: DramaCreateInput) => api.post<Drama>("/dramas", data),
   update: (id: string, data: Partial<DramaCreateInput>) => api.put<Drama>(`/dramas/${id}`, data),
   delete: (id: string) => api.delete(`/dramas/${id}`),
-  searchMeta: (q: string) => api.get<ContentMeta[]>("/metadata/dramas", { q }),
+  searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/dramas", { q, page }),
 };
 
 export const mediaTypesApi = {

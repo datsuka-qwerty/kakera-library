@@ -28,6 +28,6 @@ export const dramasApi = {
     apiClient.put<Drama>(`/dramas/${id}`, data).then((r) => r.data),
   delete: (id: string) =>
     apiClient.delete(`/dramas/${id}`),
-  searchMeta: (q: string) =>
-    apiClient.get<ContentMeta[]>("/metadata/dramas", { params: { q } }).then((r) => r.data),
+  searchMeta: (q: string, page = 1) =>
+    apiClient.get<ContentMeta[]>("/metadata/dramas", { params: { q, page } }).then((r) => r.data),
 };

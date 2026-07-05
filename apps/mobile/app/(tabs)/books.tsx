@@ -237,6 +237,8 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
   const [metaResults, setMetaResults] = useState<{ googleBooksId: string; title: string; authors: string[]; isbn?: string; coverImageUrl?: string; publisher?: string; genres?: string[] }[]>([]);
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [metaPage, setMetaPage] = useState(1);
+  const [hasMoreMeta, setHasMoreMeta] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -245,18 +247,23 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
     ).catch(() => {});
   }, []);
 
-  const searchMeta = async () => {
+  const doSearchMeta = async (page: number, append: boolean) => {
     if (!metaSearch.trim()) return;
     setSearching(true);
     try {
-      const res = await booksApi.searchMeta(metaSearch);
-      setMetaResults(res ?? []);
+      const res = await booksApi.searchMeta(metaSearch, page);
+      const items = res ?? [];
+      setMetaResults(append ? (prev) => [...prev, ...items] : items);
+      setMetaPage(page);
+      setHasMoreMeta(items.length >= 10);
     } catch {
       Alert.alert(t("common.error"), t("content.errorSearchFailed"));
     } finally {
       setSearching(false);
     }
   };
+  const searchMeta = () => doSearchMeta(1, false);
+  const loadMoreMeta = () => doSearchMeta(metaPage + 1, true);
 
   const applyMeta = (m: typeof metaResults[0]) => {
     setTitle(m.title);
@@ -348,7 +355,7 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
 
         {metaResults.length > 0 && (
           <View style={[f.metaList, { borderColor: theme.border }]}>
-            {metaResults.slice(0, 5).map((m) => (
+            {metaResults.map((m) => (
               <Pressable key={m.googleBooksId} style={[f.metaItem, { backgroundColor: theme.card, borderBottomColor: theme.borderLight }]} onPress={() => applyMeta(m)}>
                 <CoverImage src={m.coverImageUrl} width={36} height={48} />
                 <View style={{ flex: 1 }}>
@@ -357,6 +364,13 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
                 </View>
               </Pressable>
             ))}
+            {hasMoreMeta && (
+              <Pressable style={[f.loadMoreBtn, { borderTopColor: theme.border }]} onPress={loadMoreMeta} disabled={searching}>
+                <Text style={[f.loadMoreText, { color: accent }]}>
+                  {searching ? t("common.loading") : t("common.loadMore")}
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -494,6 +508,8 @@ const f = StyleSheet.create({
   metaItem: { flexDirection: "row", gap: 10, padding: 10, borderBottomWidth: 1 },
   metaTitle: { fontSize: 13, fontWeight: "500" },
   metaSub: { fontSize: 12 },
+  loadMoreBtn: { padding: 10, alignItems: "center", borderTopWidth: 1 },
+  loadMoreText: { fontSize: 13, fontWeight: "500" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   chipText: { fontSize: 13 },

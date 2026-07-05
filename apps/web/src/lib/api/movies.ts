@@ -36,6 +36,6 @@ export const moviesApi = {
     apiClient.put<Movie>(`/movies/${id}`, data).then((r) => r.data),
   delete: (id: string) =>
     apiClient.delete(`/movies/${id}`),
-  searchMeta: (q: string) =>
-    apiClient.get<ContentMeta[]>("/metadata/movies", { params: { q } }).then((r) => r.data),
+  searchMeta: (q: string, page = 1) =>
+    apiClient.get<ContentMeta[]>("/metadata/movies", { params: { q, page } }).then((r) => r.data),
 };

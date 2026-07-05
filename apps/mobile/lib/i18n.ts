@@ -290,6 +290,7 @@ const ja = {
       empty: "データがありません",
       logout: "ログアウト",
       logoutConfirm: "ログアウトしますか？",
+      loadMore: "もっと見る",
     },
   },
 };
@@ -583,6 +584,7 @@ const en = {
       empty: "No data",
       logout: "Log Out",
       logoutConfirm: "Log out?",
+      loadMore: "Load More",
     },
   },
 };

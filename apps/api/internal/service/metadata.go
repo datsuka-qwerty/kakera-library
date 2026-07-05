@@ -23,10 +23,11 @@ type BookMeta struct {
 	Genres        []string `json:"genres"`
 }
 
-func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
+func SearchBooksMeta(ctx context.Context, query string, page int) ([]BookMeta, error) {
 	apiKey := os.Getenv("GOOGLE_BOOKS_API_KEY")
-	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=%s&maxResults=10&key=%s",
-		url.QueryEscape(query), apiKey)
+	startIndex := (page - 1) * 10
+	u := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes?q=%s&maxResults=10&startIndex=%d&key=%s",
+		url.QueryEscape(query), startIndex, apiKey)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	resp, err := http.DefaultClient.Do(req)
@@ -97,7 +98,7 @@ func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
 }
 
 func LookupISBN(ctx context.Context, isbn string) (*BookMeta, error) {
-	books, err := SearchBooksMeta(ctx, "isbn:"+isbn)
+	books, err := SearchBooksMeta(ctx, "isbn:"+isbn, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -166,18 +167,18 @@ func ensureTMDBGenres(ctx context.Context, mediaType string) map[int]string {
 	return m
 }
 
-func SearchMoviesMeta(ctx context.Context, query string) ([]ContentMeta, error) {
-	return searchTMDB(ctx, "movie", query)
+func SearchMoviesMeta(ctx context.Context, query string, page int) ([]ContentMeta, error) {
+	return searchTMDB(ctx, "movie", query, page)
 }
 
-func SearchDramasMeta(ctx context.Context, query string) ([]ContentMeta, error) {
-	return searchTMDB(ctx, "tv", query)
+func SearchDramasMeta(ctx context.Context, query string, page int) ([]ContentMeta, error) {
+	return searchTMDB(ctx, "tv", query, page)
 }
 
-func searchTMDB(ctx context.Context, mediaType, query string) ([]ContentMeta, error) {
+func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]ContentMeta, error) {
 	apiKey := os.Getenv("TMDB_API_KEY")
-	u := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s&language=ja-JP",
-		mediaType, apiKey, url.QueryEscape(query))
+	u := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s&language=ja-JP&page=%d",
+		mediaType, apiKey, url.QueryEscape(query), page)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	resp, err := http.DefaultClient.Do(req)

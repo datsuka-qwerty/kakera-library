@@ -51,6 +51,7 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "back": "Back",
+    "loadMore": "Load More",
     "searchFailed": "Search failed. Please try again."
   },
   "sharedDashboard": {

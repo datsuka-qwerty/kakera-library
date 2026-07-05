@@ -38,8 +38,8 @@ export const booksApi = {
     apiClient.put<Book>(`/books/${id}`, data).then((r) => r.data),
   delete: (id: string) =>
     apiClient.delete(`/books/${id}`),
-  searchMeta: (q: string) =>
-    apiClient.get<BookMeta[]>("/metadata/books", { params: { q } }).then((r) => r.data),
+  searchMeta: (q: string, page = 1) =>
+    apiClient.get<BookMeta[]>("/metadata/books", { params: { q, page } }).then((r) => r.data),
   lookupBarcode: (isbn: string) =>
     apiClient.get<BookMeta>(`/metadata/barcode/${isbn}`).then((r) => r.data),
 };

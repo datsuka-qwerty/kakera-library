@@ -42,6 +42,8 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof booksApi.searchMeta>>>([]);
+  const [metaPage, setMetaPage] = useState(1);
+  const [hasMoreMeta, setHasMoreMeta] = useState(false);
 
   const { data: allMediaTypes } = useQuery({
     queryKey: ["mediaTypes"],
@@ -49,24 +51,29 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   });
   const bookMediaTypes = allMediaTypes?.filter((m) => m.category === "book") ?? [];
 
-  const handleMetaSearch = async () => {
+  const doMetaSearch = async (page: number, append: boolean) => {
     if (!metaSearch.trim()) return;
     setSearching(true);
     setSearchError(null);
     try {
-      const results = await booksApi.searchMeta(metaSearch);
-      setMetaResults(results ?? []);
+      const results = await booksApi.searchMeta(metaSearch, page);
+      const items = results ?? [];
+      setMetaResults(append ? (prev) => [...prev, ...items] : items);
+      setMetaPage(page);
+      setHasMoreMeta(items.length >= 10);
     } catch {
       setSearchError(t("common.searchFailed"));
-      setMetaResults([]);
+      if (!append) setMetaResults([]);
     } finally {
       setSearching(false);
     }
   };
+  const handleMetaSearch = () => doMetaSearch(1, false);
+  const handleLoadMore = () => doMetaSearch(metaPage + 1, true);
 
   const applyMeta = (meta: (typeof metaResults)[0]) => {
     setTitle(meta.title);
-    setAuthors(meta.authors.join(", "));
+    setAuthors((meta.authors ?? []).join(", "));
     if (meta.publisher) setPublisher(meta.publisher);
     if (meta.isbn) setIsbn(meta.isbn);
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
@@ -124,23 +131,35 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
         </div>
         {searchError && <p className="mt-1 text-xs text-red-500">{searchError}</p>}
         {metaResults.length > 0 && (
-          <ul className="mt-1 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700 max-h-48 overflow-y-auto">
-            {metaResults.map((m) => (
-              <li key={m.googleBooksId}>
-                <button
-                  type="button"
-                  onClick={() => applyMeta(m)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex gap-3 items-center"
-                >
-                  {m.coverImageUrl && <img src={m.coverImageUrl} alt="" className="w-8 h-10 object-cover rounded" />}
-                  <span>
-                    <p className="font-medium">{m.title}</p>
-                    <p className="text-xs text-gray-400">{m.authors.join(", ")}</p>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-1">
+            <ul className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700 max-h-64 overflow-y-auto">
+              {metaResults.map((m) => (
+                <li key={m.googleBooksId}>
+                  <button
+                    type="button"
+                    onClick={() => applyMeta(m)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 flex gap-3 items-center"
+                  >
+                    {m.coverImageUrl && <img src={m.coverImageUrl} alt="" className="w-8 h-10 object-cover rounded" />}
+                    <span>
+                      <p className="font-medium">{m.title}</p>
+                      <p className="text-xs text-gray-400">{(m.authors ?? []).join(", ")}</p>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {hasMoreMeta && (
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={searching}
+                className="mt-1 w-full text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 py-1"
+              >
+                {searching ? t("common.loading") : t("common.loadMore")}
+              </button>
+            )}
+          </div>
         )}
       </div>
 

@@ -131,9 +131,17 @@ func GetUserDashboardStats(c echo.Context) error {
 
 // External metadata
 
+func parsePage(c echo.Context) int {
+	p, _ := strconv.Atoi(c.QueryParam("page"))
+	if p < 1 {
+		p = 1
+	}
+	return p
+}
+
 func SearchBooks(c echo.Context) error {
 	q := c.QueryParam("q")
-	books, err := service.SearchBooksMeta(c.Request().Context(), q)
+	books, err := service.SearchBooksMeta(c.Request().Context(), q, parsePage(c))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
@@ -142,7 +150,7 @@ func SearchBooks(c echo.Context) error {
 
 func SearchMovies(c echo.Context) error {
 	q := c.QueryParam("q")
-	movies, err := service.SearchMoviesMeta(c.Request().Context(), q)
+	movies, err := service.SearchMoviesMeta(c.Request().Context(), q, parsePage(c))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
@@ -151,7 +159,7 @@ func SearchMovies(c echo.Context) error {
 
 func SearchDramas(c echo.Context) error {
 	q := c.QueryParam("q")
-	dramas, err := service.SearchDramasMeta(c.Request().Context(), q)
+	dramas, err := service.SearchDramasMeta(c.Request().Context(), q, parsePage(c))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
 	}
