@@ -100,7 +100,7 @@ export default function BarcodeScreen() {
       <CameraView
         style={{ flex: 1 }}
         facing="back"
-        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "isbn13"] }}
+        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8"] }}
         onBarcodeScanned={handleBarCodeScanned}
       />
 

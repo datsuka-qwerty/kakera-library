@@ -58,7 +58,7 @@ func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
 		return nil, err
 	}
 
-	var books []BookMeta
+	books := make([]BookMeta, 0)
 	for _, item := range result.Items {
 		b := BookMeta{
 			GoogleBooksID: item.ID,
@@ -196,7 +196,7 @@ func searchTMDB(ctx context.Context, mediaType, query string) ([]ContentMeta, er
 
 	genreMap := ensureTMDBGenres(ctx, mediaType)
 
-	var contents []ContentMeta
+	contents := make([]ContentMeta, 0)
 	for _, r := range result.Results {
 		title := r.Title
 		if title == "" {

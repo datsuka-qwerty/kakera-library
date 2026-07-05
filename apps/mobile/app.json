@@ -28,7 +28,8 @@
       [
         "expo-camera",
         { "cameraPermission": "カメラを使用してバーコードをスキャンします" }
-      ]
+      ],
+      "./plugins/withLocaleConfig"
     ],
     "scheme": "kakera-library",
     "experiments": {

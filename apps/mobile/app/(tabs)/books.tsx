@@ -202,7 +202,7 @@ export default function BooksScreen() {
         />
       )}
 
-      <Modal visible={modalOpen} animationType="slide" presentationStyle="pageSheet">
+      <Modal visible={modalOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalOpen(false)}>
         <BookForm initial={editing} onCancel={() => setModalOpen(false)} onSaved={onSaved} />
       </Modal>
     </View>
@@ -250,7 +250,7 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
     setSearching(true);
     try {
       const res = await booksApi.searchMeta(metaSearch);
-      setMetaResults(res);
+      setMetaResults(res ?? []);
     } catch {
       Alert.alert(t("common.error"), t("content.errorSearchFailed"));
     } finally {
