@@ -260,7 +260,7 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
 
   const applyMeta = (m: typeof metaResults[0]) => {
     setTitle(m.title);
-    setAuthors(m.authors.join(", "));
+    setAuthors((m.authors ?? []).join(", "));
     if (m.isbn) setIsbn(m.isbn);
     if (m.coverImageUrl) setCoverImageUrl(m.coverImageUrl);
     if (m.publisher) setPublisher(m.publisher);
@@ -353,7 +353,7 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
                 <CoverImage src={m.coverImageUrl} width={36} height={48} />
                 <View style={{ flex: 1 }}>
                   <Text style={[f.metaTitle, { color: theme.text }]} numberOfLines={2}>{m.title}</Text>
-                  <Text style={[f.metaSub, { color: theme.textMuted }]}>{m.authors.join(", ")}</Text>
+                  <Text style={[f.metaSub, { color: theme.textMuted }]}>{(m.authors ?? []).join(", ")}</Text>
                 </View>
               </Pressable>
             ))}

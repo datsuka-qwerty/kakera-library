@@ -60,11 +60,19 @@ func SearchBooksMeta(ctx context.Context, query string) ([]BookMeta, error) {
 
 	books := make([]BookMeta, 0)
 	for _, item := range result.Items {
+		authors := item.VolumeInfo.Authors
+		if authors == nil {
+			authors = []string{}
+		}
+		genres := item.VolumeInfo.Categories
+		if genres == nil {
+			genres = []string{}
+		}
 		b := BookMeta{
 			GoogleBooksID: item.ID,
 			Title:         item.VolumeInfo.Title,
-			Authors:       item.VolumeInfo.Authors,
-			Genres:        item.VolumeInfo.Categories,
+			Authors:       authors,
+			Genres:        genres,
 		}
 		if item.VolumeInfo.Publisher != "" {
 			b.Publisher = &item.VolumeInfo.Publisher
