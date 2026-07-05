@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { router, useSegments } from "expo-router";
 import * as NavigationBar from "expo-navigation-bar";
-import { getLocales } from "expo-localization";
+import { useLocales } from "expo-localization";
 import { useAuthStore } from "../store/authStore";
 import { useDarkModeStore } from "../store/darkModeStore";
 import { useLanguageStore } from "../store/languageStore";
@@ -29,20 +29,20 @@ function AuthGuard() {
 }
 
 function SyncOSLanguage() {
-  const { language, lastOSLocale, setLanguage } = useLanguageStore();
+  const locales = useLocales();
+  const setLanguage = useLanguageStore((s) => s.setLanguage);
 
   useEffect(() => {
-    const osLocale = getLocales()[0]?.languageCode ?? "";
-    if (lastOSLocale !== osLocale) {
-      const supported: Array<"ja" | "en"> = ["ja", "en"];
-      const lang: "ja" | "en" = supported.includes(osLocale as "ja" | "en")
-        ? (osLocale as "ja" | "en")
-        : language;
-      setLanguage(lang);
-      useLanguageStore.setState({ lastOSLocale: osLocale });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const osLocale = locales[0]?.languageCode ?? "";
+    const { language, lastOSLocale } = useLanguageStore.getState();
+    if (lastOSLocale === osLocale) return;
+    const supported: Array<"ja" | "en"> = ["ja", "en"];
+    const next: "ja" | "en" = supported.includes(osLocale as "ja" | "en")
+      ? (osLocale as "ja" | "en")
+      : language;
+    setLanguage(next);
+    useLanguageStore.setState({ lastOSLocale: osLocale });
+  }, [locales, setLanguage]);
 
   return null;
 }

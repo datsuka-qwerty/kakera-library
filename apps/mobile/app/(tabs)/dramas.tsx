@@ -347,22 +347,24 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
 
         {metaResults.length > 0 && (
           <View style={[f.metaList, { borderColor: theme.border }]}>
-            {metaResults.map((m) => (
-              <Pressable key={m.tmdbId} style={[f.metaItem, { backgroundColor: theme.card, borderBottomColor: theme.borderLight }]} onPress={() => applyMeta(m)}>
-                <CoverImage src={m.coverImageUrl} width={36} height={48} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[f.metaTitle, { color: theme.text }]} numberOfLines={2}>{m.title}</Text>
-                  {m.releasedAt && <Text style={[f.metaSub, { color: theme.textMuted }]}>{m.releasedAt}</Text>}
-                </View>
-              </Pressable>
-            ))}
-            {hasMoreMeta && (
-              <Pressable style={[f.loadMoreBtn, { borderTopColor: theme.border }]} onPress={loadMoreMeta} disabled={searching}>
-                <Text style={[f.loadMoreText, { color: accent }]}>
-                  {searching ? t("common.loading") : t("common.loadMore")}
-                </Text>
-              </Pressable>
-            )}
+            <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" style={{ maxHeight: 240 }}>
+              {metaResults.map((m) => (
+                <Pressable key={m.tmdbId} style={[f.metaItem, { backgroundColor: theme.card, borderBottomColor: theme.borderLight }]} onPress={() => applyMeta(m)}>
+                  <CoverImage src={m.coverImageUrl} width={36} height={48} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[f.metaTitle, { color: theme.text }]} numberOfLines={2}>{m.title}</Text>
+                    {m.releasedAt && <Text style={[f.metaSub, { color: theme.textMuted }]}>{m.releasedAt}</Text>}
+                  </View>
+                </Pressable>
+              ))}
+              {hasMoreMeta && (
+                <Pressable style={[f.loadMoreBtn, { borderTopColor: theme.border }]} onPress={loadMoreMeta} disabled={searching}>
+                  <Text style={[f.loadMoreText, { color: accent }]}>
+                    {searching ? t("common.loading") : t("common.loadMore")}
+                  </Text>
+                </Pressable>
+              )}
+            </ScrollView>
           </View>
         )}
 

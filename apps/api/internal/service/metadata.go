@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -82,7 +83,7 @@ func SearchBooksMeta(ctx context.Context, query string, page int) ([]BookMeta, e
 			b.Description = &item.VolumeInfo.Description
 		}
 		if item.VolumeInfo.ImageLinks != nil {
-			img := item.VolumeInfo.ImageLinks.Thumbnail
+			img := strings.Replace(item.VolumeInfo.ImageLinks.Thumbnail, "http://", "https://", 1)
 			b.CoverImageURL = &img
 		}
 		for _, id := range item.VolumeInfo.IndustryIdentifiers {
