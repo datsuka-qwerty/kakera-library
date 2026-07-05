@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { router, useSegments } from "expo-router";
-import { NavigationBar } from "expo-navigation-bar";
+import * as NavigationBar from "expo-navigation-bar";
 import { getLocales } from "expo-localization";
 import { useAuthStore } from "../store/authStore";
 import { useDarkModeStore } from "../store/darkModeStore";
@@ -51,10 +51,14 @@ export default function RootLayout() {
   const isDark = useDarkModeStore((s) => s.isDark);
   const bg = isDark ? DARK_BG : LIGHT_BG;
 
+  useEffect(() => {
+    NavigationBar.setBackgroundColorAsync(bg);
+    NavigationBar.setButtonStyleAsync(isDark ? "light" : "dark");
+  }, [isDark, bg]);
+
   return (
     <>
       <StatusBar style={isDark ? "light" : "dark"} backgroundColor={bg} />
-      <NavigationBar style={isDark ? "dark" : "light"} />
       <AuthGuard />
       <SyncOSLanguage />
       <Stack screenOptions={{ contentStyle: { backgroundColor: bg } }}>
