@@ -126,6 +126,10 @@ type BookInput struct {
 }
 
 func CreateBook(ctx context.Context, userID string, input BookInput) (*Book, error) {
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO books (id, user_id, title, series_name, series_order, authors, isbn, publisher,
@@ -146,6 +150,14 @@ func CreateBook(ctx context.Context, userID string, input BookInput) (*Book, err
 }
 
 func UpdateBook(ctx context.Context, userID, id string, input BookInput) (*Book, error) {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM books WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
+
 	_, err := db.Pool.Exec(ctx, `
 		UPDATE books SET
 		  title=$3, series_name=$4, series_order=$5, authors=$6, isbn=$7, publisher=$8,
@@ -163,12 +175,28 @@ func UpdateBook(ctx context.Context, userID, id string, input BookInput) (*Book,
 	if err := syncBookTags(ctx, userID, id, input.Tags); err != nil {
 		return nil, err
 	}
+
+	newURL := ""
+	if input.CoverImageURL != nil {
+		newURL = *input.CoverImageURL
+	}
+	if oldURL != newURL {
+		DeleteImageIfOrphaned(ctx, oldURL)
+	}
+
 	return GetBook(ctx, userID, id)
 }
 
 func DeleteBook(ctx context.Context, userID, id string) error {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM books WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
 	_, err := db.Pool.Exec(ctx, `DELETE FROM books WHERE id=$1 AND user_id=$2`, id, userID)
-	return err
+	if err != nil {
+		return err
+	}
+	DeleteImageIfOrphaned(ctx, oldURL)
+	return nil
 }
 
 func syncBookTags(ctx context.Context, userID, bookID string, tagNames []string) error {

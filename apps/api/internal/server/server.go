@@ -112,6 +112,9 @@ func registerRoutes(e *echo.Echo) {
 	v1.GET("/dashboard/stats", handler.GetDashboardStats, apimiddleware.JWT())
 	v1.GET("/dashboard/stats/:username", handler.GetUserDashboardStats, apimiddleware.JWT())
 
+	// Serve locally stored cover images (public — no auth required)
+	v1.GET("/images/:filename", handler.ServeImage)
+
 	// External metadata search
 	meta := v1.Group("/metadata", apimiddleware.JWT())
 	meta.GET("/books", handler.SearchBooks)

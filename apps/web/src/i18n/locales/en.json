@@ -50,7 +50,8 @@
     "search": "Search",
     "loading": "Loading...",
     "error": "An error occurred",
-    "back": "Back"
+    "back": "Back",
+    "searchFailed": "Search failed. Please try again."
   },
   "sharedDashboard": {
     "title": "{{username}}'s Dashboard",

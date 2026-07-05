@@ -40,6 +40,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof booksApi.searchMeta>>>([]);
 
   const { data: allMediaTypes } = useQuery({
@@ -51,9 +52,13 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const handleMetaSearch = async () => {
     if (!metaSearch.trim()) return;
     setSearching(true);
+    setSearchError(null);
     try {
       const results = await booksApi.searchMeta(metaSearch);
       setMetaResults(results ?? []);
+    } catch {
+      setSearchError(t("common.searchFailed"));
+      setMetaResults([]);
     } finally {
       setSearching(false);
     }
@@ -117,6 +122,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
             <Search size={15} />
           </button>
         </div>
+        {searchError && <p className="mt-1 text-xs text-red-500">{searchError}</p>}
         {metaResults.length > 0 && (
           <ul className="mt-1 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700 max-h-48 overflow-y-auto">
             {metaResults.map((m) => (

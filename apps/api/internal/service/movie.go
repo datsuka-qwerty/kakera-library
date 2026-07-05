@@ -118,6 +118,10 @@ func GetMovie(ctx context.Context, userID, id string) (*Movie, error) {
 }
 
 func CreateMovie(ctx context.Context, userID string, input MovieInput) (*Movie, error) {
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO movies (id, user_id, title, series_name, series_order, directors,
@@ -135,6 +139,14 @@ func CreateMovie(ctx context.Context, userID string, input MovieInput) (*Movie, 
 }
 
 func UpdateMovie(ctx context.Context, userID, id string, input MovieInput) (*Movie, error) {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM movies WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
+
 	_, err := db.Pool.Exec(ctx, `
 		UPDATE movies SET
 		  title=$3, series_name=$4, series_order=$5, directors=$6,
@@ -149,12 +161,28 @@ func UpdateMovie(ctx context.Context, userID, id string, input MovieInput) (*Mov
 		return nil, err
 	}
 	syncMovieTags(ctx, userID, id, input.Tags)
+
+	newURL := ""
+	if input.CoverImageURL != nil {
+		newURL = *input.CoverImageURL
+	}
+	if oldURL != newURL {
+		DeleteImageIfOrphaned(ctx, oldURL)
+	}
+
 	return GetMovie(ctx, userID, id)
 }
 
 func DeleteMovie(ctx context.Context, userID, id string) error {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM movies WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
 	_, err := db.Pool.Exec(ctx, `DELETE FROM movies WHERE id=$1 AND user_id=$2`, id, userID)
-	return err
+	if err != nil {
+		return err
+	}
+	DeleteImageIfOrphaned(ctx, oldURL)
+	return nil
 }
 
 func syncMovieTags(ctx context.Context, userID, movieID string, tagNames []string) {

@@ -37,14 +37,25 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof moviesApi.searchMeta>>>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const { data: allMediaTypes } = useQuery({ queryKey: ["mediaTypes"], queryFn: mediaTypesApi.list });
   const movieMediaTypes = allMediaTypes?.filter((m) => m.category === "movie") ?? [];
 
   const handleMetaSearch = async () => {
     if (!metaSearch.trim()) return;
-    const results = await moviesApi.searchMeta(metaSearch);
-    setMetaResults(results ?? []);
+    setSearching(true);
+    setSearchError(null);
+    try {
+      const results = await moviesApi.searchMeta(metaSearch);
+      setMetaResults(results ?? []);
+    } catch {
+      setSearchError(t("common.searchFailed"));
+      setMetaResults([]);
+    } finally {
+      setSearching(false);
+    }
   };
 
   const applyMeta = (meta: (typeof metaResults)[0]) => {
@@ -95,8 +106,9 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
             placeholder={t("movie.metaSearchPlaceholder")}
             className="input flex-1 text-sm"
           />
-          <button type="button" onClick={handleMetaSearch} className="btn-secondary px-3"><Search size={15} /></button>
+          <button type="button" onClick={handleMetaSearch} disabled={searching} className="btn-secondary px-3"><Search size={15} /></button>
         </div>
+        {searchError && <p className="mt-1 text-xs text-red-500">{searchError}</p>}
         {metaResults.length > 0 && (
           <ul className="mt-1 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700 max-h-48 overflow-y-auto">
             {metaResults.map((m) => (

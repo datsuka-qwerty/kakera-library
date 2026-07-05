@@ -124,6 +124,10 @@ func GetDrama(ctx context.Context, userID, id string) (*Drama, error) {
 }
 
 func CreateDrama(ctx context.Context, userID string, input DramaInput) (*Drama, error) {
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO dramas (id, user_id, title, series_name, total_seasons,
@@ -143,6 +147,14 @@ func CreateDrama(ctx context.Context, userID string, input DramaInput) (*Drama, 
 }
 
 func UpdateDrama(ctx context.Context, userID, id string, input DramaInput) (*Drama, error) {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM dramas WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
+	if input.CoverImageURL != nil && *input.CoverImageURL != "" {
+		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
+		input.CoverImageURL = &stored
+	}
+
 	_, err := db.Pool.Exec(ctx, `
 		UPDATE dramas SET
 		  title=$3, series_name=$4, total_seasons=$5,
@@ -159,12 +171,28 @@ func UpdateDrama(ctx context.Context, userID, id string, input DramaInput) (*Dra
 		return nil, err
 	}
 	syncDramaTags(ctx, userID, id, input.Tags)
+
+	newURL := ""
+	if input.CoverImageURL != nil {
+		newURL = *input.CoverImageURL
+	}
+	if oldURL != newURL {
+		DeleteImageIfOrphaned(ctx, oldURL)
+	}
+
 	return GetDrama(ctx, userID, id)
 }
 
 func DeleteDrama(ctx context.Context, userID, id string) error {
+	var oldURL string
+	db.Pool.QueryRow(ctx, `SELECT COALESCE(cover_image_url,'') FROM dramas WHERE id=$1 AND user_id=$2`, id, userID).Scan(&oldURL)
+
 	_, err := db.Pool.Exec(ctx, `DELETE FROM dramas WHERE id=$1 AND user_id=$2`, id, userID)
-	return err
+	if err != nil {
+		return err
+	}
+	DeleteImageIfOrphaned(ctx, oldURL)
+	return nil
 }
 
 func syncDramaTags(ctx context.Context, userID, dramaID string, tagNames []string) {

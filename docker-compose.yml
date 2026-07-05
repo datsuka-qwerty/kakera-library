@@ -32,8 +32,10 @@ services:
       TMDB_API_KEY: ${TMDB_API_KEY}
       GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY}
       BACKUP_DIR: /backups
+      IMAGE_DIR: /data/images
     volumes:
       - backups:/backups
+      - images_data:/data/images
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -55,3 +57,4 @@ services:
 volumes:
   postgres_data:
   backups:
+  images_data:
