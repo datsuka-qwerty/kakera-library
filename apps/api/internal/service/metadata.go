@@ -118,6 +118,7 @@ type ContentMeta struct {
 	ReleasedAt    *string  `json:"releasedAt"`
 	Overview      *string  `json:"overview"`
 	Genres        []string `json:"genres"`
+	TotalSeasons  *int     `json:"totalSeasons,omitempty"`
 }
 
 const tmdbImageBase = "https://image.tmdb.org/t/p/w500"
@@ -206,7 +207,7 @@ func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]Conte
 
 	genreMap := ensureTMDBGenres(ctx, mediaType)
 
-	contents := make([]ContentMeta, 0)
+	contents := make([]ContentMeta, 0, len(result.Results))
 	for _, r := range result.Results {
 		title := r.Title
 		if title == "" {
@@ -234,5 +235,42 @@ func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]Conte
 		}
 		contents = append(contents, c)
 	}
+
+	// For TV shows, fetch number_of_seasons in parallel
+	if mediaType == "tv" && len(contents) > 0 {
+		type detailResult struct {
+			idx     int
+			seasons int
+		}
+		ch := make(chan detailResult, len(contents))
+		for i, c := range contents {
+			go func(idx, id int) {
+				u := fmt.Sprintf("https://api.themoviedb.org/3/tv/%d?api_key=%s", id, apiKey)
+				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					ch <- detailResult{idx, 0}
+					return
+				}
+				defer resp.Body.Close()
+				var detail struct {
+					NumberOfSeasons int `json:"number_of_seasons"`
+				}
+				if err := json.NewDecoder(resp.Body).Decode(&detail); err != nil {
+					ch <- detailResult{idx, 0}
+					return
+				}
+				ch <- detailResult{idx, detail.NumberOfSeasons}
+			}(i, c.TmdbID)
+		}
+		for range contents {
+			r := <-ch
+			if r.seasons > 0 {
+				s := r.seasons
+				contents[r.idx].TotalSeasons = &s
+			}
+		}
+	}
+
 	return contents, nil
 }

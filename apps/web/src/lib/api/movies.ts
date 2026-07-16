@@ -23,6 +23,7 @@ export interface ContentMeta {
   releasedAt?: string;
   overview?: string;
   genres?: string[];
+  totalSeasons?: number;
 }
 
 export const moviesApi = {

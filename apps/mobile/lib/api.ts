@@ -36,6 +36,7 @@ export interface ContentMeta {
   coverImageUrl?: string;
   releasedAt?: string;
   genres?: string[];
+  totalSeasons?: number;
 }
 
 export const setupApi = {

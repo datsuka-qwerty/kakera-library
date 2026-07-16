@@ -71,6 +71,7 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     if (meta.releasedAt) setFirstSeasonAiredAt(meta.releasedAt);
     setTmdbId(meta.tmdbId.toString());
+    if (meta.totalSeasons) setTotalSeasons(meta.totalSeasons.toString());
     if (meta.genres?.length) setGenres(meta.genres);
     setMetaResults([]);
     setMetaSearch("");

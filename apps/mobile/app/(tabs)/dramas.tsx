@@ -222,6 +222,7 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
   const [watchStartedAt, setWatchStartedAt] = useState(initial?.watchStartedAt ?? "");
   const [currentSeason, setCurrentSeason] = useState(initial?.currentSeason?.toString() ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
+  const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
   const [status, setStatus] = useState<DramaStatus>(initial?.status ?? "interested");
   const [rating, setRating] = useState<number | undefined>(initial?.rating ?? undefined);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
@@ -230,7 +231,7 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
   const [mediaTypes, setMediaTypes] = useState<string[]>(initial?.mediaTypes ?? []);
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string }[]>([]);
-  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[] }[]>([]);
+  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; totalSeasons?: number }[]>([]);
   const { language } = useLanguageStore();
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -269,6 +270,8 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
     if (m.coverImageUrl) setCoverImageUrl(m.coverImageUrl);
     if (m.releasedAt) setFirstSeasonAiredAt(m.releasedAt);
     if (m.genres?.length) setGenres(m.genres);
+    setTmdbId(m.tmdbId.toString());
+    if (m.totalSeasons) setTotalSeasons(m.totalSeasons.toString());
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -303,6 +306,7 @@ function DramaForm({ initial, onCancel, onSaved }: FormProps) {
         rating,
         tags,
         memo: memo.trim() || undefined,
+        tmdbId: tmdbId ? parseInt(tmdbId, 10) : undefined,
       };
       if (initial) {
         await dramasApi.update(initial.id, payload);
