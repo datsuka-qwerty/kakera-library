@@ -7,6 +7,8 @@ export interface BookListParams {
   rating?: number;
   page?: number;
   perPage?: number;
+  sort?: string;
+  order?: string;
 }
 
 export interface PaginatedBooks {
@@ -25,6 +27,7 @@ export interface BookMeta {
   coverImageUrl?: string;
   description?: string;
   genres?: string[];
+  publishedAt?: string;
 }
 
 export const booksApi = {

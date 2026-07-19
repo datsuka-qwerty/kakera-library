@@ -166,6 +166,15 @@ func SearchDramas(c echo.Context) error {
 	return c.JSON(http.StatusOK, dramas)
 }
 
+func SearchAnimes(c echo.Context) error {
+	q := c.QueryParam("q")
+	animes, err := service.SearchAnimesMeta(c.Request().Context(), q, parsePage(c))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
+	}
+	return c.JSON(http.StatusOK, animes)
+}
+
 func LookupBarcode(c echo.Context) error {
 	isbn := c.Param("isbn")
 	book, err := service.LookupISBN(c.Request().Context(), isbn)

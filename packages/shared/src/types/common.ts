@@ -24,7 +24,7 @@ export interface Tag {
 
 export interface UserMediaType {
   id: string;
-  category: "book" | "movie" | "drama";
+  category: "book" | "movie" | "drama" | "anime";
   name: string;
   isDefault: boolean;
   key?: string;

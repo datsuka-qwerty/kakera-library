@@ -37,6 +37,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const [tagInput, setTagInput] = useState("");
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [googleBooksId, setGoogleBooksId] = useState(initial?.googleBooksId ?? "");
+  const [publishedAt, setPublishedAt] = useState(initial?.publishedAt ?? "");
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -79,6 +80,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     setGoogleBooksId(meta.googleBooksId);
     if (meta.genres?.length) setGenres(meta.genres);
+    if (meta.publishedAt) setPublishedAt(meta.publishedAt);
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -109,6 +111,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
       tags,
       memo: memo || undefined,
       googleBooksId: googleBooksId || undefined,
+      publishedAt: publishedAt || undefined,
     });
   };
 
@@ -144,6 +147,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
                     <span>
                       <p className="font-medium">{m.title}</p>
                       <p className="text-xs text-gray-400">{(m.authors ?? []).join(", ")}</p>
+                      {m.publishedAt && <p className="text-xs text-gray-400">{m.publishedAt}</p>}
                     </span>
                   </button>
                 </li>
@@ -211,6 +215,10 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
         <div>
           <label className="form-label">{t("book.completedAt")}</label>
           <input type="date" value={completedAt} onChange={(e) => setCompletedAt(e.target.value)} className="input" />
+        </div>
+        <div>
+          <label className="form-label">{t("book.publishedAt")}</label>
+          <input type="date" value={publishedAt} onChange={(e) => setPublishedAt(e.target.value)} className="input" />
         </div>
       </div>
 

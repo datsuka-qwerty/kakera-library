@@ -18,6 +18,7 @@ type BookMeta struct {
 	Title         string   `json:"title"`
 	Authors       []string `json:"authors"`
 	Publisher     *string  `json:"publisher"`
+	PublishedAt   *string  `json:"publishedAt"`
 	ISBN          *string  `json:"isbn"`
 	CoverImageURL *string  `json:"coverImageUrl"`
 	Description   *string  `json:"description"`
@@ -44,6 +45,7 @@ func SearchBooksMeta(ctx context.Context, query string, page int) ([]BookMeta, e
 				Title               string   `json:"title"`
 				Authors             []string `json:"authors"`
 				Publisher           string   `json:"publisher"`
+				PublishedDate       string   `json:"publishedDate"`
 				Categories          []string `json:"categories"`
 				IndustryIdentifiers []struct {
 					Type       string `json:"type"`
@@ -78,6 +80,9 @@ func SearchBooksMeta(ctx context.Context, query string, page int) ([]BookMeta, e
 		}
 		if item.VolumeInfo.Publisher != "" {
 			b.Publisher = &item.VolumeInfo.Publisher
+		}
+		if item.VolumeInfo.PublishedDate != "" {
+			b.PublishedAt = &item.VolumeInfo.PublishedDate
 		}
 		if item.VolumeInfo.Description != "" {
 			b.Description = &item.VolumeInfo.Description
@@ -119,6 +124,7 @@ type ContentMeta struct {
 	Overview      *string  `json:"overview"`
 	Genres        []string `json:"genres"`
 	TotalSeasons  *int     `json:"totalSeasons,omitempty"`
+	Studios       []string `json:"studios,omitempty"`
 }
 
 const tmdbImageBase = "https://image.tmdb.org/t/p/w500"
@@ -174,6 +180,10 @@ func SearchMoviesMeta(ctx context.Context, query string, page int) ([]ContentMet
 }
 
 func SearchDramasMeta(ctx context.Context, query string, page int) ([]ContentMeta, error) {
+	return searchTMDB(ctx, "tv", query, page)
+}
+
+func SearchAnimesMeta(ctx context.Context, query string, page int) ([]ContentMeta, error) {
 	return searchTMDB(ctx, "tv", query, page)
 }
 
@@ -236,11 +246,12 @@ func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]Conte
 		contents = append(contents, c)
 	}
 
-	// For TV shows, fetch number_of_seasons in parallel
+	// For TV shows, fetch number_of_seasons and production_companies in parallel
 	if mediaType == "tv" && len(contents) > 0 {
 		type detailResult struct {
 			idx     int
 			seasons int
+			studios []string
 		}
 		ch := make(chan detailResult, len(contents))
 		for i, c := range contents {
@@ -249,18 +260,27 @@ func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]Conte
 				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 				resp, err := http.DefaultClient.Do(req)
 				if err != nil {
-					ch <- detailResult{idx, 0}
+					ch <- detailResult{idx: idx}
 					return
 				}
 				defer resp.Body.Close()
 				var detail struct {
-					NumberOfSeasons int `json:"number_of_seasons"`
+					NumberOfSeasons     int `json:"number_of_seasons"`
+					ProductionCompanies []struct {
+						Name string `json:"name"`
+					} `json:"production_companies"`
 				}
 				if err := json.NewDecoder(resp.Body).Decode(&detail); err != nil {
-					ch <- detailResult{idx, 0}
+					ch <- detailResult{idx: idx}
 					return
 				}
-				ch <- detailResult{idx, detail.NumberOfSeasons}
+				studios := make([]string, 0, len(detail.ProductionCompanies))
+				for _, pc := range detail.ProductionCompanies {
+					if pc.Name != "" {
+						studios = append(studios, pc.Name)
+					}
+				}
+				ch <- detailResult{idx: idx, seasons: detail.NumberOfSeasons, studios: studios}
 			}(i, c.TmdbID)
 		}
 		for range contents {
@@ -268,6 +288,9 @@ func searchTMDB(ctx context.Context, mediaType, query string, page int) ([]Conte
 			if r.seasons > 0 {
 				s := r.seasons
 				contents[r.idx].TotalSeasons = &s
+			}
+			if len(r.studios) > 0 {
+				contents[r.idx].Studios = r.studios
 			}
 		}
 	}

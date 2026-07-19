@@ -76,9 +76,9 @@ func ListMovies(ctx context.Context, userID string, f ListFilter) (*MovieListRes
 		LEFT JOIN tags t ON t.id = mt.tag_id
 		WHERE %s
 		GROUP BY movies.id
-		ORDER BY movies.created_at DESC
+		ORDER BY %s
 		LIMIT $%d OFFSET $%d
-	`, where, len(args)-1, len(args)), args...)
+	`, where, f.sortClause("movies"), len(args)-1, len(args)), args...)
 	if err != nil {
 		return nil, err
 	}

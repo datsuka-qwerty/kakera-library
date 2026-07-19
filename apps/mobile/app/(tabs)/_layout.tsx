@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { LayoutDashboard, BookOpen, Film, Tv } from "lucide-react-native";
+import { LayoutDashboard, BookOpen, Film, Tv, Clapperboard } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useTheme, useAccent } from "../../lib/theme";
 
@@ -49,6 +49,13 @@ export default function TabLayout() {
         options={{
           title: t("tabs.dramas"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <Tv color={color} size={size - 2} />,
+        }}
+      />
+      <Tabs.Screen
+        name="animes"
+        options={{
+          title: t("tabs.animes"),
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Clapperboard color={color} size={size - 2} />,
         }}
       />
     </Tabs>

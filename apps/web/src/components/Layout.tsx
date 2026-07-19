@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, NavLink } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Film, Tv, Sun, Moon, Share2 } from "lucide-react";
+import { LayoutDashboard, BookOpen, Film, Tv, Clapperboard, Sun, Moon, Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { useAuthStore } from "../store/authStore";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/books", icon: BookOpen, labelKey: "nav.books" },
   { to: "/movies", icon: Film, labelKey: "nav.movies" },
   { to: "/dramas", icon: Tv, labelKey: "nav.dramas" },
+  { to: "/animes", icon: Clapperboard, labelKey: "nav.animes" },
 ];
 
 function useDarkMode() {

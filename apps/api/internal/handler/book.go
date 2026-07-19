@@ -13,6 +13,8 @@ func ListBooks(c echo.Context) error {
 	f := service.ListFilter{
 		Search: c.QueryParam("search"),
 		Status: c.QueryParam("status"),
+		Sort:   c.QueryParam("sort"),
+		Order:  c.QueryParam("order"),
 	}
 	if r := c.QueryParam("rating"); r != "" {
 		v, _ := strconv.Atoi(r)
@@ -37,6 +39,7 @@ func CreateBook(c echo.Context) error {
 		Authors       []string `json:"authors"`
 		ISBN          *string  `json:"isbn"`
 		Publisher     *string  `json:"publisher"`
+		PublishedAt   *string  `json:"publishedAt"`
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
@@ -55,7 +58,7 @@ func CreateBook(c echo.Context) error {
 
 	book, err := service.CreateBook(c.Request().Context(), userID, service.BookInput{
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
-		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher,
+		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher, PublishedAt: req.PublishedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
 		Genres: req.Genres, PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
 		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, GoogleBooksID: req.GoogleBooksID,
@@ -84,6 +87,7 @@ func UpdateBook(c echo.Context) error {
 		Authors       []string `json:"authors"`
 		ISBN          *string  `json:"isbn"`
 		Publisher     *string  `json:"publisher"`
+		PublishedAt   *string  `json:"publishedAt"`
 		CoverImageURL *string  `json:"coverImageUrl"`
 		Status        string   `json:"status"`
 		MediaTypes    []string `json:"mediaTypes"`
@@ -102,7 +106,7 @@ func UpdateBook(c echo.Context) error {
 
 	book, err := service.UpdateBook(c.Request().Context(), userID, c.Param("id"), service.BookInput{
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
-		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher,
+		Authors: req.Authors, ISBN: req.ISBN, Publisher: req.Publisher, PublishedAt: req.PublishedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
 		Genres: req.Genres, PurchasePlace: req.PurchasePlace, StartedAt: req.StartedAt, CompletedAt: req.CompletedAt,
 		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, GoogleBooksID: req.GoogleBooksID,

@@ -4,6 +4,7 @@
     "books": "Books",
     "movies": "Movies",
     "dramas": "Dramas",
+    "animes": "Anime",
     "settings": "Settings",
     "sharing": "Sharing"
   },
@@ -107,7 +108,8 @@
     "placeholder": "New media type",
     "book": "Book",
     "movie": "Movie",
-    "drama": "Drama"
+    "drama": "Drama",
+    "anime": "Anime"
   },
   "data": {
     "exportTitle": "Export Data",
@@ -200,13 +202,25 @@
     "noBooksRegistered": "No books registered",
     "noMoviesRegistered": "No movies registered",
     "noDramasRegistered": "No dramas registered",
+    "noAnimesRegistered": "No anime registered",
     "addBook": "Add Book",
     "editBook": "Edit Book",
     "addMovie": "Add Movie",
     "editMovie": "Edit Movie",
     "addDrama": "Add Drama",
     "editDrama": "Edit Drama",
-    "deleteConfirm": "Delete \"{{title}}\"?"
+    "addAnime": "Add Anime",
+    "editAnime": "Edit Anime",
+    "deleteConfirm": "Delete \"{{title}}\"?",
+    "sortBy": "Sort by",
+    "sortCreatedAt": "Date Added",
+    "sortPublishedAt": "Published",
+    "sortReleasedAt": "Release Date",
+    "sortFirstAiredAt": "Air Date",
+    "sortTitle": "Title",
+    "sortRating": "Rating",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending"
   },
   "shareModal": {
     "dashboardTitle": "Share Dashboard",
@@ -247,6 +261,7 @@
     "tags": "Tags",
     "tagPlaceholder": "Type a tag and press Enter",
     "memo": "Memo",
+    "publishedAt": "Published Date",
     "metaSearch": "Metadata Search",
     "metaSearchPlaceholder": "Search by title or author...",
     "statuses": {
@@ -290,6 +305,32 @@
     "coverImageUrl": "Cover Image URL",
     "status": "Watch Status",
     "mediaTypes": "Media",
+    "rating": "Rating",
+    "genre": "Genre",
+    "tags": "Tags",
+    "tagPlaceholder": "Type a tag and press Enter",
+    "memo": "Memo",
+    "metaSearch": "Metadata Search (TMDB)",
+    "metaSearchPlaceholder": "Search by title...",
+    "statuses": {
+      "interested": "Interested",
+      "watching": "Watching",
+      "completed": "Completed",
+      "dropped": "Dropped"
+    }
+  },
+  "anime": {
+    "title": "Title",
+    "seriesName": "Series Name",
+    "totalSeasons": "Total Seasons",
+    "firstSeasonAiredAt": "First Season Air Date",
+    "currentSeasonAiredAt": "Current Season Air Date",
+    "currentSeason": "Current Season",
+    "watchStartedAt": "Started Watching",
+    "coverImageUrl": "Cover Image URL",
+    "status": "Watch Status",
+    "mediaTypes": "Media",
+    "studios": "Studios",
     "rating": "Rating",
     "genre": "Genre",
     "tags": "Tags",

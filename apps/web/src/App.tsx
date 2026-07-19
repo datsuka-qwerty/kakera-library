@@ -10,6 +10,7 @@ import DashboardPage from "./pages/DashboardPage";
 import BooksPage from "./pages/BooksPage";
 import MoviesPage from "./pages/MoviesPage";
 import DramasPage from "./pages/DramasPage";
+import AnimesPage from "./pages/AnimesPage";
 import SettingsPage from "./pages/SettingsPage";
 import SharingPage from "./pages/SharingPage";
 import SharedDashboardPage from "./pages/SharedDashboardPage";
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="books" element={<BooksPage />} />
           <Route path="movies" element={<MoviesPage />} />
           <Route path="dramas" element={<DramasPage />} />
+          <Route path="animes" element={<AnimesPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="sharing" element={<SharingPage />} />
         </Route>

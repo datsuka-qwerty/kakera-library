@@ -7,6 +7,8 @@ export interface MovieListParams {
   rating?: number;
   page?: number;
   perPage?: number;
+  sort?: string;
+  order?: string;
 }
 
 export interface PaginatedMovies {
@@ -24,6 +26,7 @@ export interface ContentMeta {
   overview?: string;
   genres?: string[];
   totalSeasons?: number;
+  studios?: string[];
 }
 
 export const moviesApi = {

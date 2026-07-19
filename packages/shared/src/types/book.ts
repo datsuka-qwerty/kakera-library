@@ -13,6 +13,7 @@ export interface Book {
   authors: string[];
   isbn?: string;
   publisher?: string;
+  publishedAt?: string;
   coverImageUrl?: string;
   status: BookStatus;
   mediaTypes: BookMediaType[];
@@ -36,6 +37,7 @@ export interface BookCreateInput {
   authors?: string[];
   isbn?: string;
   publisher?: string;
+  publishedAt?: string;
   coverImageUrl?: string;
   status: BookStatus;
   mediaTypes: BookMediaType[];

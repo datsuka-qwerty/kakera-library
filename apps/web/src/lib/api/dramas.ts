@@ -8,6 +8,8 @@ export interface DramaListParams {
   rating?: number;
   page?: number;
   perPage?: number;
+  sort?: string;
+  order?: string;
 }
 
 export interface PaginatedDramas {

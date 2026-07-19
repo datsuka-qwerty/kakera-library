@@ -96,6 +96,14 @@ func registerRoutes(e *echo.Echo) {
 	dramas.PUT("/:id", handler.UpdateDrama)
 	dramas.DELETE("/:id", handler.DeleteDrama)
 
+	// Animes
+	animes := v1.Group("/animes", apimiddleware.JWT())
+	animes.GET("", handler.ListAnimes)
+	animes.POST("", handler.CreateAnime)
+	animes.GET("/:id", handler.GetAnime)
+	animes.PUT("/:id", handler.UpdateAnime)
+	animes.DELETE("/:id", handler.DeleteAnime)
+
 	// Tags
 	tags := v1.Group("/tags", apimiddleware.JWT())
 	tags.GET("", handler.ListTags)
@@ -120,6 +128,7 @@ func registerRoutes(e *echo.Echo) {
 	meta.GET("/books", handler.SearchBooks)
 	meta.GET("/movies", handler.SearchMovies)
 	meta.GET("/dramas", handler.SearchDramas)
+	meta.GET("/animes", handler.SearchAnimes)
 
 	// Barcode lookup
 	meta.GET("/barcode/:isbn", handler.LookupBarcode)

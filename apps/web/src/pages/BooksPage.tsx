@@ -15,6 +15,12 @@ import Modal from "../components/ui/Modal";
 import BookForm from "../components/books/BookForm";
 
 const STATUSES = ["", "want_to_read", "reading", "completed", "on_hold"];
+const SORT_OPTIONS = [
+  { value: "created_at", labelKey: "content.sortCreatedAt" },
+  { value: "published_at", labelKey: "content.sortPublishedAt" },
+  { value: "title", labelKey: "content.sortTitle" },
+  { value: "rating", labelKey: "content.sortRating" },
+];
 
 export default function BooksPage() {
   const { t } = useTranslation();
@@ -22,6 +28,8 @@ export default function BooksPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState("desc");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [groupBySeries, setGroupBySeries] = useState(true);
@@ -29,12 +37,14 @@ export default function BooksPage() {
   const [shareOpen, setShareOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["books", { search, status, page: groupBySeries ? 1 : page }],
+    queryKey: ["books", { search, status, page: groupBySeries ? 1 : page, sort, order }],
     queryFn: () => booksApi.list({
       search: search || undefined,
       status: status || undefined,
       page: groupBySeries ? 1 : page,
       perPage: groupBySeries ? 500 : 20,
+      sort,
+      order,
     }),
   });
 
@@ -109,14 +119,17 @@ export default function BooksPage() {
 
       <div className="flex items-center gap-3 flex-wrap">
         <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="input w-auto text-sm"
-        >
+        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="input w-auto text-sm">
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s ? t(`book.statuses.${s}`) : t("content.allStatuses")}</option>
           ))}
+        </select>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="input w-auto text-sm">
+          {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
+        </select>
+        <select value={order} onChange={(e) => setOrder(e.target.value)} className="input w-auto text-sm">
+          <option value="desc">{t("content.sortDesc")}</option>
+          <option value="asc">{t("content.sortAsc")}</option>
         </select>
       </div>
 

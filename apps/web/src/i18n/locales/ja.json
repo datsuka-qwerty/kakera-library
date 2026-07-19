@@ -4,6 +4,7 @@
     "books": "本",
     "movies": "映画",
     "dramas": "ドラマ",
+    "animes": "アニメ",
     "settings": "設定",
     "sharing": "共有"
   },
@@ -107,7 +108,8 @@
     "placeholder": "新しいメディアタイプ",
     "book": "本",
     "movie": "映画",
-    "drama": "ドラマ"
+    "drama": "ドラマ",
+    "anime": "アニメ"
   },
   "data": {
     "exportTitle": "データのエクスポート",
@@ -200,13 +202,25 @@
     "noBooksRegistered": "登録された本がありません",
     "noMoviesRegistered": "登録された映画がありません",
     "noDramasRegistered": "登録されたドラマがありません",
+    "noAnimesRegistered": "登録されたアニメがありません",
     "addBook": "本を追加",
     "editBook": "本を編集",
     "addMovie": "映画を追加",
     "editMovie": "映画を編集",
     "addDrama": "ドラマを追加",
     "editDrama": "ドラマを編集",
-    "deleteConfirm": "「{{title}}」を削除しますか？"
+    "addAnime": "アニメを追加",
+    "editAnime": "アニメを編集",
+    "deleteConfirm": "「{{title}}」を削除しますか？",
+    "sortBy": "並び替え",
+    "sortCreatedAt": "登録日",
+    "sortPublishedAt": "出版日",
+    "sortReleasedAt": "公開日",
+    "sortFirstAiredAt": "放映日",
+    "sortTitle": "タイトル",
+    "sortRating": "評価",
+    "sortAsc": "昇順",
+    "sortDesc": "降順"
   },
   "shareModal": {
     "dashboardTitle": "ダッシュボードを共有",
@@ -247,6 +261,7 @@
     "tags": "タグ",
     "tagPlaceholder": "タグを入力してEnter",
     "memo": "メモ",
+    "publishedAt": "出版日",
     "metaSearch": "メタデータ検索",
     "metaSearchPlaceholder": "タイトルや著者で検索...",
     "statuses": {
@@ -290,6 +305,32 @@
     "coverImageUrl": "カバー画像URL",
     "status": "視聴ステータス",
     "mediaTypes": "視聴媒体",
+    "rating": "評価",
+    "genre": "ジャンル",
+    "tags": "タグ",
+    "tagPlaceholder": "タグを入力してEnter",
+    "memo": "メモ",
+    "metaSearch": "メタデータ検索（TMDB）",
+    "metaSearchPlaceholder": "タイトルで検索...",
+    "statuses": {
+      "interested": "気になる",
+      "watching": "視聴中",
+      "completed": "完走",
+      "dropped": "途中まで"
+    }
+  },
+  "anime": {
+    "title": "タイトル",
+    "seriesName": "シリーズ名",
+    "totalSeasons": "シーズン数",
+    "firstSeasonAiredAt": "第1シーズン放映日",
+    "currentSeasonAiredAt": "現行シーズン放映日",
+    "currentSeason": "現在のシーズン",
+    "watchStartedAt": "視聴開始日",
+    "coverImageUrl": "カバー画像URL",
+    "status": "視聴ステータス",
+    "mediaTypes": "視聴媒体",
+    "studios": "制作会社",
     "rating": "評価",
     "genre": "ジャンル",
     "tags": "タグ",

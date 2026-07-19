@@ -1,7 +1,7 @@
 import axios from "axios";
 import { api } from "./apiClient";
 import { useAuthStore } from "../store/authStore";
-import type { Book, BookCreateInput, Movie, MovieCreateInput, Drama, DramaCreateInput } from "@kakera/shared";
+import type { Book, BookCreateInput, Movie, MovieCreateInput, Drama, DramaCreateInput, Anime, AnimeCreateInput } from "@kakera/shared";
 
 export type CategorySummary = { added: number; updated: number; skipped: number };
 export type ImportResult = { books: CategorySummary; movies: CategorySummary; dramas: CategorySummary };
@@ -18,6 +18,8 @@ export interface ListParams {
   status?: string;
   page?: number;
   perPage?: number;
+  sort?: string;
+  order?: string;
 }
 
 export interface BookMeta {
@@ -28,6 +30,7 @@ export interface BookMeta {
   isbn?: string;
   coverImageUrl?: string;
   genres?: string[];
+  publishedAt?: string;
 }
 
 export interface ContentMeta {
@@ -37,6 +40,7 @@ export interface ContentMeta {
   releasedAt?: string;
   genres?: string[];
   totalSeasons?: number;
+  studios?: string[];
 }
 
 export const setupApi = {
@@ -85,6 +89,14 @@ export const dramasApi = {
   update: (id: string, data: Partial<DramaCreateInput>) => api.put<Drama>(`/dramas/${id}`, data),
   delete: (id: string) => api.delete(`/dramas/${id}`),
   searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/dramas", { q, page }),
+};
+
+export const animesApi = {
+  list: (p: ListParams) => api.get<PaginatedResult<Anime>>("/animes", p),
+  create: (data: AnimeCreateInput) => api.post<Anime>("/animes", data),
+  update: (id: string, data: Partial<AnimeCreateInput>) => api.put<Anime>(`/animes/${id}`, data),
+  delete: (id: string) => api.delete(`/animes/${id}`),
+  searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/animes", { q, page }),
 };
 
 export const mediaTypesApi = {

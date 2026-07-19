@@ -15,6 +15,12 @@ import Modal from "../components/ui/Modal";
 import DramaForm from "../components/dramas/DramaForm";
 
 const STATUSES = ["", "interested", "watching", "completed", "dropped"];
+const SORT_OPTIONS = [
+  { value: "created_at", labelKey: "content.sortCreatedAt" },
+  { value: "first_season_aired_at", labelKey: "content.sortFirstAiredAt" },
+  { value: "title", labelKey: "content.sortTitle" },
+  { value: "rating", labelKey: "content.sortRating" },
+];
 
 export default function DramasPage() {
   const { t } = useTranslation();
@@ -22,6 +28,8 @@ export default function DramasPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState("desc");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Drama | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -29,12 +37,14 @@ export default function DramasPage() {
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
-    queryKey: ["dramas", { search, status, page: groupBySeries ? 1 : page }],
+    queryKey: ["dramas", { search, status, page: groupBySeries ? 1 : page, sort, order }],
     queryFn: () => dramasApi.list({
       search: search || undefined,
       status: status || undefined,
       page: groupBySeries ? 1 : page,
       perPage: groupBySeries ? 500 : 20,
+      sort,
+      order,
     }),
   });
 
@@ -110,6 +120,13 @@ export default function DramasPage() {
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s ? t(`drama.statuses.${s}`) : t("content.allStatuses")}</option>
           ))}
+        </select>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="input w-auto text-sm">
+          {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
+        </select>
+        <select value={order} onChange={(e) => setOrder(e.target.value)} className="input w-auto text-sm">
+          <option value="desc">{t("content.sortDesc")}</option>
+          <option value="asc">{t("content.sortAsc")}</option>
         </select>
       </div>
 
