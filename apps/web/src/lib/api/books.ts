@@ -4,6 +4,8 @@ import type { Book, BookCreateInput } from "@kakera/shared";
 export interface BookListParams {
   search?: string;
   status?: string;
+  genre?: string;
+  tag?: string;
   rating?: number;
   page?: number;
   perPage?: number;

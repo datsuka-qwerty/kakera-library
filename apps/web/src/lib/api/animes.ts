@@ -5,6 +5,8 @@ import type { ContentMeta } from "./movies";
 export interface AnimeListParams {
   search?: string;
   status?: string;
+  genre?: string;
+  tag?: string;
   rating?: number;
   page?: number;
   perPage?: number;

@@ -4,6 +4,8 @@ import type { Movie, MovieCreateInput } from "@kakera/shared";
 export interface MovieListParams {
   search?: string;
   status?: string;
+  genre?: string;
+  tag?: string;
   rating?: number;
   page?: number;
   perPage?: number;
@@ -27,6 +29,7 @@ export interface ContentMeta {
   genres?: string[];
   totalSeasons?: number;
   studios?: string[];
+  directors?: string[];
 }
 
 export const moviesApi = {

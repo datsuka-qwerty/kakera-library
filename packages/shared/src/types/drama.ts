@@ -24,6 +24,8 @@ export interface Drama {
   rating?: number; // 1-5
   tags: string[];
   genres: string[];
+  directors: string[];
+  studios: string[];
   memo?: string;
   tmdbId?: number;
   createdAt: string;
@@ -43,6 +45,8 @@ export interface DramaCreateInput {
   status: DramaStatus;
   mediaTypes: DramaMediaType[];
   genres?: string[];
+  directors?: string[];
+  studios?: string[];
   rating?: number;
   tags?: string[];
   memo?: string;

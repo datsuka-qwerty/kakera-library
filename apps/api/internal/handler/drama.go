@@ -13,6 +13,8 @@ func ListDramas(c echo.Context) error {
 	f := service.ListFilter{
 		Search: c.QueryParam("search"),
 		Status: c.QueryParam("status"),
+		Genre:  c.QueryParam("genre"),
+		Tag:    c.QueryParam("tag"),
 		Sort:   c.QueryParam("sort"),
 		Order:  c.QueryParam("order"),
 	}
@@ -44,6 +46,8 @@ func CreateDrama(c echo.Context) error {
 		Status               string   `json:"status"`
 		MediaTypes           []string `json:"mediaTypes"`
 		Genres               []string `json:"genres"`
+		Directors            []string `json:"directors"`
+		Studios              []string `json:"studios"`
 		Rating               *int     `json:"rating"`
 		Tags                 []string `json:"tags"`
 		Memo                 *string  `json:"memo"`
@@ -57,7 +61,8 @@ func CreateDrama(c echo.Context) error {
 		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
 		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Directors: req.Directors, Studios: req.Studios,
+		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))
@@ -88,6 +93,8 @@ func UpdateDrama(c echo.Context) error {
 		Status               string   `json:"status"`
 		MediaTypes           []string `json:"mediaTypes"`
 		Genres               []string `json:"genres"`
+		Directors            []string `json:"directors"`
+		Studios              []string `json:"studios"`
 		Rating               *int     `json:"rating"`
 		Tags                 []string `json:"tags"`
 		Memo                 *string  `json:"memo"`
@@ -101,7 +108,8 @@ func UpdateDrama(c echo.Context) error {
 		FirstSeasonAiredAt: req.FirstSeasonAiredAt, CurrentSeasonAiredAt: req.CurrentSeasonAiredAt,
 		WatchStartedAt: req.WatchStartedAt, CurrentSeason: req.CurrentSeason,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
-		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
+		Genres: req.Genres, Directors: req.Directors, Studios: req.Studios,
+		Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errResp("internal", err.Error()))

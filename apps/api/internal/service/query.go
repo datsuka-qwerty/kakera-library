@@ -6,14 +6,16 @@ import (
 )
 
 type ListFilter struct {
-	Search  string
-	Status  string
-	Tags    []string
-	Rating  *int
-	Page    int
-	PerPage int
-	Sort    string
-	Order   string
+	Search    string
+	Status    string
+	Tags      []string
+	Rating    *int
+	Genre     string
+	Tag       string
+	Page      int
+	PerPage   int
+	Sort      string
+	Order     string
 }
 
 var allowedSortCols = map[string]map[string]string{
@@ -33,19 +35,27 @@ var allowedSortCols = map[string]map[string]string{
 		"rating":      "movies.rating",
 	},
 	"dramas": {
-		"created_at":             "dramas.created_at",
-		"first_season_aired_at":  "dramas.first_season_aired_at",
+		"created_at":              "dramas.created_at",
+		"first_season_aired_at":   "dramas.first_season_aired_at",
 		"current_season_aired_at": "dramas.current_season_aired_at",
-		"title":                  "dramas.title",
-		"rating":                 "dramas.rating",
+		"title":                   "dramas.title",
+		"rating":                  "dramas.rating",
 	},
 	"animes": {
-		"created_at":             "animes.created_at",
-		"first_season_aired_at":  "animes.first_season_aired_at",
+		"created_at":              "animes.created_at",
+		"first_season_aired_at":   "animes.first_season_aired_at",
 		"current_season_aired_at": "animes.current_season_aired_at",
-		"title":                  "animes.title",
-		"rating":                 "animes.rating",
+		"title":                   "animes.title",
+		"rating":                  "animes.rating",
 	},
+}
+
+// tagJoin maps table name → (join table, FK column name)
+var tagJoin = map[string][2]string{
+	"books":  {"book_tags", "book_id"},
+	"movies": {"movie_tags", "movie_id"},
+	"dramas": {"drama_tags", "drama_id"},
+	"animes": {"anime_tags", "anime_id"},
 }
 
 func (f *ListFilter) defaults() {
@@ -89,7 +99,22 @@ func buildWhere(userID, table string, f ListFilter) (string, []any) {
 
 	if f.Rating != nil {
 		args = append(args, *f.Rating)
-		conds = append(conds, fmt.Sprintf("%s.rating = $%d", table, len(args)))
+		conds = append(conds, fmt.Sprintf("%s.rating >= $%d", table, len(args)))
+	}
+
+	if f.Genre != "" {
+		args = append(args, f.Genre)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.genres)", len(args), table))
+	}
+
+	if f.Tag != "" {
+		if tj, ok := tagJoin[table]; ok {
+			args = append(args, strings.ToLower(f.Tag))
+			conds = append(conds, fmt.Sprintf(
+				`EXISTS (SELECT 1 FROM %s _tj JOIN tags _t ON _t.id = _tj.tag_id WHERE _tj.%s = %s.id AND LOWER(_t.name) = $%d)`,
+				tj[0], tj[1], table, len(args),
+			))
+		}
 	}
 
 	return strings.Join(conds, " AND "), args

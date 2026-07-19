@@ -27,6 +27,9 @@ export default function BooksPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [genre, setGenre] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [minRating, setMinRating] = useState("");
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState("created_at");
   const [order, setOrder] = useState("desc");
@@ -37,10 +40,13 @@ export default function BooksPage() {
   const [shareOpen, setShareOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["books", { search, status, page: groupBySeries ? 1 : page, sort, order }],
+    queryKey: ["books", { search, status, genre, filterTag, minRating, page: groupBySeries ? 1 : page, sort, order }],
     queryFn: () => booksApi.list({
       search: search || undefined,
       status: status || undefined,
+      genre: genre || undefined,
+      tag: filterTag || undefined,
+      rating: minRating ? parseInt(minRating) : undefined,
       page: groupBySeries ? 1 : page,
       perPage: groupBySeries ? 500 : 20,
       sort,
@@ -131,6 +137,19 @@ export default function BooksPage() {
           <option value="desc">{t("content.sortDesc")}</option>
           <option value="asc">{t("content.sortAsc")}</option>
         </select>
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <input value={genre} onChange={(e) => { setGenre(e.target.value); setPage(1); }} placeholder={t("content.filterGenre")} className="input w-36 text-sm" />
+        <input value={filterTag} onChange={(e) => { setFilterTag(e.target.value); setPage(1); }} placeholder={t("content.filterTag")} className="input w-36 text-sm" />
+        <select value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.filterMinRating")}</option>
+          {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r}+</option>)}
+        </select>
+        {(genre || filterTag || minRating) && (
+          <button onClick={() => { setGenre(""); setFilterTag(""); setMinRating(""); setPage(1); }} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+            {t("content.filterClear")}
+          </button>
+        )}
       </div>
 
       {isLoading ? (

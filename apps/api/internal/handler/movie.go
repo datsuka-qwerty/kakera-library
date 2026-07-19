@@ -13,6 +13,8 @@ func ListMovies(c echo.Context) error {
 	f := service.ListFilter{
 		Search: c.QueryParam("search"),
 		Status: c.QueryParam("status"),
+		Genre:  c.QueryParam("genre"),
+		Tag:    c.QueryParam("tag"),
 		Sort:   c.QueryParam("sort"),
 		Order:  c.QueryParam("order"),
 	}
@@ -37,6 +39,8 @@ func CreateMovie(c echo.Context) error {
 		SeriesName    *string  `json:"seriesName"`
 		SeriesOrder   *int     `json:"seriesOrder"`
 		Directors     []string `json:"directors"`
+		Distributors  []string `json:"distributors"`
+		Studios       []string `json:"studios"`
 		ReleasedAt    *string  `json:"releasedAt"`
 		WatchedAt     *string  `json:"watchedAt"`
 		CoverImageURL *string  `json:"coverImageUrl"`
@@ -53,7 +57,8 @@ func CreateMovie(c echo.Context) error {
 	}
 	movie, err := service.CreateMovie(c.Request().Context(), userID, service.MovieInput{
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
-		Directors: req.Directors, ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
+		Directors: req.Directors, Distributors: req.Distributors, Studios: req.Studios,
+		ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
 		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})
@@ -79,6 +84,8 @@ func UpdateMovie(c echo.Context) error {
 		SeriesName    *string  `json:"seriesName"`
 		SeriesOrder   *int     `json:"seriesOrder"`
 		Directors     []string `json:"directors"`
+		Distributors  []string `json:"distributors"`
+		Studios       []string `json:"studios"`
 		ReleasedAt    *string  `json:"releasedAt"`
 		WatchedAt     *string  `json:"watchedAt"`
 		CoverImageURL *string  `json:"coverImageUrl"`
@@ -95,7 +102,8 @@ func UpdateMovie(c echo.Context) error {
 	}
 	movie, err := service.UpdateMovie(c.Request().Context(), userID, c.Param("id"), service.MovieInput{
 		Title: req.Title, SeriesName: req.SeriesName, SeriesOrder: req.SeriesOrder,
-		Directors: req.Directors, ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
+		Directors: req.Directors, Distributors: req.Distributors, Studios: req.Studios,
+		ReleasedAt: req.ReleasedAt, WatchedAt: req.WatchedAt,
 		CoverImageURL: req.CoverImageURL, Status: req.Status, MediaTypes: req.MediaTypes,
 		Genres: req.Genres, Rating: req.Rating, Tags: req.Tags, Memo: req.Memo, TmdbID: req.TmdbID,
 	})

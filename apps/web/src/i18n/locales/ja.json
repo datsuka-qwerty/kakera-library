@@ -220,7 +220,11 @@
     "sortTitle": "タイトル",
     "sortRating": "評価",
     "sortAsc": "昇順",
-    "sortDesc": "降順"
+    "sortDesc": "降順",
+    "filterGenre": "ジャンルで絞り込み",
+    "filterTag": "タグで絞り込み",
+    "filterMinRating": "最低評価",
+    "filterClear": "絞り込みを解除"
   },
   "shareModal": {
     "dashboardTitle": "ダッシュボードを共有",
@@ -277,6 +281,9 @@
     "seriesOrder": "シリーズ順",
     "directors": "監督",
     "directorsPlaceholder": "カンマ区切り",
+    "distributors": "配給会社",
+    "distributorsPlaceholder": "カンマ区切り",
+    "studios": "制作スタジオ",
     "releasedAt": "公開日",
     "watchedAt": "視聴日",
     "coverImageUrl": "カバー画像URL",
@@ -305,6 +312,9 @@
     "coverImageUrl": "カバー画像URL",
     "status": "視聴ステータス",
     "mediaTypes": "視聴媒体",
+    "directors": "監督",
+    "directorsPlaceholder": "カンマ区切り",
+    "studios": "制作会社",
     "rating": "評価",
     "genre": "ジャンル",
     "tags": "タグ",

@@ -13,6 +13,8 @@ func ListBooks(c echo.Context) error {
 	f := service.ListFilter{
 		Search: c.QueryParam("search"),
 		Status: c.QueryParam("status"),
+		Genre:  c.QueryParam("genre"),
+		Tag:    c.QueryParam("tag"),
 		Sort:   c.QueryParam("sort"),
 		Order:  c.QueryParam("order"),
 	}

@@ -11,6 +11,8 @@ export interface Movie {
   seriesName?: string;
   seriesOrder?: number;
   directors: string[];
+  distributors: string[];
+  studios: string[];
   releasedAt?: string;
   watchedAt?: string;
   coverImageUrl?: string;
@@ -31,6 +33,8 @@ export interface MovieCreateInput {
   seriesName?: string;
   seriesOrder?: number;
   directors?: string[];
+  distributors?: string[];
+  studios?: string[];
   releasedAt?: string;
   watchedAt?: string;
   coverImageUrl?: string;

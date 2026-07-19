@@ -19,6 +19,8 @@ type Movie struct {
 	SeriesName    *string  `json:"seriesName"`
 	SeriesOrder   *int     `json:"seriesOrder"`
 	Directors     []string `json:"directors"`
+	Distributors  []string `json:"distributors"`
+	Studios       []string `json:"studios"`
 	ReleasedAt    *string  `json:"releasedAt"`
 	WatchedAt     *string  `json:"watchedAt"`
 	CoverImageURL *string  `json:"coverImageUrl"`
@@ -46,6 +48,8 @@ type MovieInput struct {
 	SeriesName    *string
 	SeriesOrder   *int
 	Directors     []string
+	Distributors  []string
+	Studios       []string
 	ReleasedAt    *string
 	WatchedAt     *string
 	CoverImageURL *string
@@ -68,6 +72,7 @@ func ListMovies(ctx context.Context, userID string, f ListFilter) (*MovieListRes
 	args = append(args, f.PerPage, f.offset())
 	rows, err := db.Pool.Query(ctx, fmt.Sprintf(`
 		SELECT movies.id, movies.user_id, movies.title, movies.series_name, movies.series_order, movies.directors,
+		       movies.distributors, movies.studios,
 		       movies.released_at::text, movies.watched_at::text, movies.cover_image_url, movies.status,
 		       movies.media_types, movies.genres, movies.rating, movies.memo, movies.tmdb_id, movies.created_at::text, movies.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
@@ -95,6 +100,7 @@ func ListMovies(ctx context.Context, userID string, f ListFilter) (*MovieListRes
 func GetMovie(ctx context.Context, userID, id string) (*Movie, error) {
 	rows, err := db.Pool.Query(ctx, `
 		SELECT m.id, m.user_id, m.title, m.series_name, m.series_order, m.directors,
+		       m.distributors, m.studios,
 		       m.released_at::text, m.watched_at::text, m.cover_image_url, m.status,
 		       m.media_types, m.genres, m.rating, m.memo, m.tmdb_id, m.created_at::text, m.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
@@ -124,10 +130,10 @@ func CreateMovie(ctx context.Context, userID string, input MovieInput) (*Movie, 
 	}
 	id := uuid.New().String()
 	_, err := db.Pool.Exec(ctx, `
-		INSERT INTO movies (id, user_id, title, series_name, series_order, directors,
+		INSERT INTO movies (id, user_id, title, series_name, series_order, directors, distributors, studios,
 		  released_at, watched_at, cover_image_url, status, media_types, genres, rating, memo, tmdb_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors,
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors, input.Distributors, input.Studios,
 		input.ReleasedAt, input.WatchedAt, input.CoverImageURL, input.Status,
 		input.MediaTypes, input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
@@ -149,11 +155,11 @@ func UpdateMovie(ctx context.Context, userID, id string, input MovieInput) (*Mov
 
 	_, err := db.Pool.Exec(ctx, `
 		UPDATE movies SET
-		  title=$3, series_name=$4, series_order=$5, directors=$6,
-		  released_at=$7, watched_at=$8, cover_image_url=$9, status=$10,
-		  media_types=$11, genres=$12, rating=$13, memo=$14, tmdb_id=$15, updated_at=NOW()
+		  title=$3, series_name=$4, series_order=$5, directors=$6, distributors=$7, studios=$8,
+		  released_at=$9, watched_at=$10, cover_image_url=$11, status=$12,
+		  media_types=$13, genres=$14, rating=$15, memo=$16, tmdb_id=$17, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
-	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors,
+	`, id, userID, input.Title, input.SeriesName, input.SeriesOrder, input.Directors, input.Distributors, input.Studios,
 		input.ReleasedAt, input.WatchedAt, input.CoverImageURL, input.Status,
 		input.MediaTypes, input.Genres, input.Rating, input.Memo, input.TmdbID,
 	)
@@ -204,6 +210,7 @@ func scanMovies(rows pgx.Rows) ([]Movie, error) {
 		var m Movie
 		if err := rows.Scan(
 			&m.ID, &m.UserID, &m.Title, &m.SeriesName, &m.SeriesOrder, &m.Directors,
+			&m.Distributors, &m.Studios,
 			&m.ReleasedAt, &m.WatchedAt, &m.CoverImageURL, &m.Status,
 			&m.MediaTypes, &m.Genres, &m.Rating, &m.Memo, &m.TmdbID, &m.CreatedAt, &m.UpdatedAt, &m.Tags,
 		); err != nil {

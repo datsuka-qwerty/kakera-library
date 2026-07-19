@@ -220,7 +220,11 @@
     "sortTitle": "Title",
     "sortRating": "Rating",
     "sortAsc": "Ascending",
-    "sortDesc": "Descending"
+    "sortDesc": "Descending",
+    "filterGenre": "Filter by genre",
+    "filterTag": "Filter by tag",
+    "filterMinRating": "Min. rating",
+    "filterClear": "Clear filters"
   },
   "shareModal": {
     "dashboardTitle": "Share Dashboard",
@@ -277,6 +281,9 @@
     "seriesOrder": "Series Order",
     "directors": "Directors",
     "directorsPlaceholder": "Separate with commas",
+    "distributors": "Distributors",
+    "distributorsPlaceholder": "Separate with commas",
+    "studios": "Production Studios",
     "releasedAt": "Release Date",
     "watchedAt": "Watched Date",
     "coverImageUrl": "Cover Image URL",
@@ -305,6 +312,9 @@
     "coverImageUrl": "Cover Image URL",
     "status": "Watch Status",
     "mediaTypes": "Media",
+    "directors": "Directors",
+    "directorsPlaceholder": "Separate with commas",
+    "studios": "Production Companies",
     "rating": "Rating",
     "genre": "Genre",
     "tags": "Tags",

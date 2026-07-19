@@ -27,6 +27,9 @@ export default function BooksScreen() {
   const [books, setBooks] = useState<Book[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [genre, setGenre] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [minRating, setMinRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
@@ -55,7 +58,12 @@ export default function BooksScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await booksApi.list({ search, status, perPage: 100 });
+      const res = await booksApi.list({
+        search, status, perPage: 100,
+        genre: genre || undefined,
+        tag: filterTag || undefined,
+        rating: minRating > 0 ? minRating : undefined,
+      });
       setBooks(res.data);
       setLoadError(false);
     } catch {
@@ -63,7 +71,7 @@ export default function BooksScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status]);
+  }, [search, status, genre, filterTag, minRating]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -108,6 +116,20 @@ export default function BooksScreen() {
             <Text style={[s.filterChipText, { color: status === sv ? "#fff" : theme.textSub }]}>
               {sv ? t(`status.${sv}`) : t("status.all")}
             </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View style={[s.filterInputRow, { paddingHorizontal: 16, gap: 8 }]}>
+        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
+          placeholder={t("content.filterGenre")} placeholderTextColor={theme.placeholder} value={genre} onChangeText={setGenre} onSubmitEditing={load} returnKeyType="search" />
+        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
+          placeholder={t("content.filterTag")} placeholderTextColor={theme.placeholder} value={filterTag} onChangeText={setFilterTag} onSubmitEditing={load} returnKeyType="search" />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginBottom: 4 }]}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {[0, 1, 2, 3, 4, 5].map((r) => (
+          <Pressable key={r} style={[s.filterChip, { backgroundColor: minRating === r ? accent : theme.borderLight }]} onPress={() => setMinRating(r === minRating ? 0 : r)}>
+            <Text style={[s.filterChipText, { color: minRating === r ? "#fff" : theme.textSub }]}>{r === 0 ? t("content.filterMinRating") : `${r}+`}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -484,6 +506,8 @@ const s = StyleSheet.create({
   filterRow: { flexGrow: 0, marginBottom: 4 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   filterChipText: { fontSize: 13 },
+  filterInputRow: { flexDirection: "row", marginBottom: 4 },
+  filterInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 13 },
   card: { flexDirection: "row", gap: 12, borderRadius: 12, padding: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   cardTitle: { fontSize: 14, fontWeight: "600" },
   cardSub: { fontSize: 12 },

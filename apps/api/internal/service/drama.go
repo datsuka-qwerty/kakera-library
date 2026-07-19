@@ -26,6 +26,8 @@ type Drama struct {
 	Status               string   `json:"status"`
 	MediaTypes           []string `json:"mediaTypes"`
 	Genres               []string `json:"genres"`
+	Directors            []string `json:"directors"`
+	Studios              []string `json:"studios"`
 	Rating               *int     `json:"rating"`
 	Tags                 []string `json:"tags"`
 	Memo                 *string  `json:"memo"`
@@ -54,6 +56,8 @@ type DramaInput struct {
 	Status               string
 	MediaTypes           []string
 	Genres               []string
+	Directors            []string
+	Studios              []string
 	Rating               *int
 	Tags                 []string
 	Memo                 *string
@@ -72,7 +76,8 @@ func ListDramas(ctx context.Context, userID string, f ListFilter) (*DramaListRes
 		SELECT dramas.id, dramas.user_id, dramas.title, dramas.series_name, dramas.total_seasons,
 		       dramas.first_season_aired_at::text, dramas.current_season_aired_at::text,
 		       dramas.watch_started_at::text, dramas.current_season, dramas.cover_image_url,
-		       dramas.status, dramas.media_types, dramas.genres, dramas.rating, dramas.memo, dramas.tmdb_id,
+		       dramas.status, dramas.media_types, dramas.genres, dramas.directors, dramas.studios,
+		       dramas.rating, dramas.memo, dramas.tmdb_id,
 		       dramas.created_at::text, dramas.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM dramas
@@ -101,7 +106,8 @@ func GetDrama(ctx context.Context, userID, id string) (*Drama, error) {
 		SELECT d.id, d.user_id, d.title, d.series_name, d.total_seasons,
 		       d.first_season_aired_at::text, d.current_season_aired_at::text,
 		       d.watch_started_at::text, d.current_season, d.cover_image_url,
-		       d.status, d.media_types, d.genres, d.rating, d.memo, d.tmdb_id,
+		       d.status, d.media_types, d.genres, d.directors, d.studios,
+		       d.rating, d.memo, d.tmdb_id,
 		       d.created_at::text, d.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM dramas d
@@ -132,12 +138,12 @@ func CreateDrama(ctx context.Context, userID string, input DramaInput) (*Drama, 
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO dramas (id, user_id, title, series_name, total_seasons,
 		  first_season_aired_at, current_season_aired_at, watch_started_at,
-		  current_season, cover_image_url, status, media_types, genres, rating, memo, tmdb_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		  current_season, cover_image_url, status, media_types, genres, directors, studios, rating, memo, tmdb_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Genres, input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Directors, input.Studios, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -160,12 +166,12 @@ func UpdateDrama(ctx context.Context, userID, id string, input DramaInput) (*Dra
 		  title=$3, series_name=$4, total_seasons=$5,
 		  first_season_aired_at=$6, current_season_aired_at=$7, watch_started_at=$8,
 		  current_season=$9, cover_image_url=$10, status=$11, media_types=$12,
-		  genres=$13, rating=$14, memo=$15, tmdb_id=$16, updated_at=NOW()
+		  genres=$13, directors=$14, studios=$15, rating=$16, memo=$17, tmdb_id=$18, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Genres, input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Directors, input.Studios, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -216,7 +222,8 @@ func scanDramas(rows pgx.Rows) ([]Drama, error) {
 			&d.ID, &d.UserID, &d.Title, &d.SeriesName, &d.TotalSeasons,
 			&d.FirstSeasonAiredAt, &d.CurrentSeasonAiredAt,
 			&d.WatchStartedAt, &d.CurrentSeason, &d.CoverImageURL,
-			&d.Status, &d.MediaTypes, &d.Genres, &d.Rating, &d.Memo, &d.TmdbID,
+			&d.Status, &d.MediaTypes, &d.Genres, &d.Directors, &d.Studios,
+			&d.Rating, &d.Memo, &d.TmdbID,
 			&d.CreatedAt, &d.UpdatedAt, &d.Tags,
 		); err != nil {
 			return nil, err

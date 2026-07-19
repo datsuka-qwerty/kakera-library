@@ -16,6 +16,9 @@ export interface PaginatedResult<T> {
 export interface ListParams {
   search?: string;
   status?: string;
+  genre?: string;
+  tag?: string;
+  rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
@@ -41,6 +44,7 @@ export interface ContentMeta {
   genres?: string[];
   totalSeasons?: number;
   studios?: string[];
+  directors?: string[];
 }
 
 export const setupApi = {

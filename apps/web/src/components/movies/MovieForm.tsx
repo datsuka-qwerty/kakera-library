@@ -35,6 +35,8 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
+  const [distributors, setDistributors] = useState(initial?.distributors?.join(", ") ?? "");
+  const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof moviesApi.searchMeta>>>([]);
   const [searching, setSearching] = useState(false);
@@ -71,6 +73,7 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.releasedAt) setReleasedAt(meta.releasedAt);
     setTmdbId(meta.tmdbId.toString());
     if (meta.genres?.length) setGenres(meta.genres);
+    if (meta.studios?.length) setStudios(meta.studios);
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -88,6 +91,8 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
       seriesName: seriesName || undefined,
       seriesOrder: seriesOrder ? parseInt(seriesOrder) : undefined,
       directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
+      distributors: distributors.split(",").map((d) => d.trim()).filter(Boolean),
+      studios,
       releasedAt: releasedAt || undefined,
       watchedAt: watchedAt || undefined,
       coverImageUrl: coverImageUrl || undefined,
@@ -159,6 +164,10 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
           <label className="form-label">{t("movie.directors")}</label>
           <input value={directors} onChange={(e) => setDirectors(e.target.value)} placeholder={t("movie.directorsPlaceholder")} className="input" />
         </div>
+        <div className="col-span-2">
+          <label className="form-label">{t("movie.distributors")}</label>
+          <input value={distributors} onChange={(e) => setDistributors(e.target.value)} placeholder={t("movie.distributorsPlaceholder")} className="input" />
+        </div>
         <div>
           <label className="form-label">{t("movie.releasedAt")}</label>
           <input type="date" value={releasedAt} onChange={(e) => setReleasedAt(e.target.value)} className="input" />
@@ -199,6 +208,19 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
             {genres.map((g) => (
               <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">
                 {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {studios.length > 0 && (
+        <div>
+          <label className="form-label">{t("movie.studios")}</label>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {studios.map((s) => (
+              <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                {s}
               </span>
             ))}
           </div>

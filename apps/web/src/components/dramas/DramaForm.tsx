@@ -36,6 +36,8 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
+  const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
+  const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [metaSearch, setMetaSearch] = useState("");
   const [metaResults, setMetaResults] = useState<Awaited<ReturnType<typeof dramasApi.searchMeta>>>([]);
   const [searching, setSearching] = useState(false);
@@ -73,6 +75,8 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
     setTmdbId(meta.tmdbId.toString());
     if (meta.totalSeasons) setTotalSeasons(meta.totalSeasons.toString());
     if (meta.genres?.length) setGenres(meta.genres);
+    if (meta.studios?.length) setStudios(meta.studios);
+    if (meta.directors?.length) setDirectors(meta.directors.join(", "));
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -99,6 +103,8 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
       status: status as DramaCreateInput["status"],
       mediaTypes,
       genres,
+      directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
+      studios,
       rating,
       tags,
       memo: memo || undefined,
@@ -206,6 +212,24 @@ export default function DramaForm({ initial, onSubmit, onCancel, loading }: Prop
             {genres.map((g) => (
               <span key={g} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300">
                 {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="form-label">{t("drama.directors")}</label>
+        <input value={directors} onChange={(e) => setDirectors(e.target.value)} placeholder={t("drama.directorsPlaceholder")} className="input" />
+      </div>
+
+      {studios.length > 0 && (
+        <div>
+          <label className="form-label">{t("drama.studios")}</label>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {studios.map((s) => (
+              <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                {s}
               </span>
             ))}
           </div>

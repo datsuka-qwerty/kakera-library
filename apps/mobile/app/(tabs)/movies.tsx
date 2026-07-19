@@ -27,6 +27,9 @@ export default function MoviesScreen() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [genre, setGenre] = useState("");
+  const [filterTag, setFilterTag] = useState("");
+  const [minRating, setMinRating] = useState(0);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Movie | null>(null);
@@ -55,7 +58,12 @@ export default function MoviesScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await moviesApi.list({ search, status, perPage: 100 });
+      const res = await moviesApi.list({
+        search, status, perPage: 100,
+        genre: genre || undefined,
+        tag: filterTag || undefined,
+        rating: minRating > 0 ? minRating : undefined,
+      });
       setMovies(res.data);
       setLoadError(false);
     } catch {
@@ -63,7 +71,7 @@ export default function MoviesScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status]);
+  }, [search, status, genre, filterTag, minRating]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -105,6 +113,20 @@ export default function MoviesScreen() {
             <Text style={[s.filterChipText, { color: status === sv ? "#fff" : theme.textSub }]}>
               {sv ? t(`status.${sv}`) : t("status.all")}
             </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      <View style={[s.filterInputRow, { paddingHorizontal: 16, gap: 8 }]}>
+        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
+          placeholder={t("content.filterGenre")} placeholderTextColor={theme.placeholder} value={genre} onChangeText={setGenre} onSubmitEditing={load} returnKeyType="search" />
+        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
+          placeholder={t("content.filterTag")} placeholderTextColor={theme.placeholder} value={filterTag} onChangeText={setFilterTag} onSubmitEditing={load} returnKeyType="search" />
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginBottom: 4 }]}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {[0, 1, 2, 3, 4, 5].map((r) => (
+          <Pressable key={r} style={[s.filterChip, { backgroundColor: minRating === r ? accent : theme.borderLight }]} onPress={() => setMinRating(r === minRating ? 0 : r)}>
+            <Text style={[s.filterChipText, { color: minRating === r ? "#fff" : theme.textSub }]}>{r === 0 ? t("content.filterMinRating") : `${r}+`}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -216,6 +238,8 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
   const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
   const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
+  const [distributors, setDistributors] = useState(initial?.distributors?.join(", ") ?? "");
+  const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [releasedAt, setReleasedAt] = useState(initial?.releasedAt ?? "");
   const [watchedAt, setWatchedAt] = useState(initial?.watchedAt ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
@@ -228,7 +252,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
   const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string }[]>([]);
-  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[] }[]>([]);
+  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; studios?: string[] }[]>([]);
   const { language } = useLanguageStore();
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -265,6 +289,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
     if (m.coverImageUrl) setCoverImageUrl(m.coverImageUrl);
     if (m.releasedAt) setReleasedAt(m.releasedAt);
     if (m.genres?.length) setGenres(m.genres);
+    if (m.studios?.length) setStudios(m.studios);
     setTmdbId(m.tmdbId.toString());
     setMetaResults([]);
     setMetaSearch("");
@@ -290,6 +315,8 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
         seriesName: seriesName.trim() || undefined,
         seriesOrder: seriesOrder ? parseInt(seriesOrder, 10) : undefined,
         directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
+        distributors: distributors.split(",").map((d) => d.trim()).filter(Boolean),
+        studios,
         releasedAt: releasedAt.trim() || undefined,
         watchedAt: watchedAt.trim() || undefined,
         coverImageUrl: coverImageUrl.trim() || undefined,
@@ -375,7 +402,12 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesOrder} onChangeText={setSeriesOrder} keyboardType="number-pad" />
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldDirectors")}</Text>
-        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={directors} onChangeText={setDirectors} />
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={directors} onChangeText={setDirectors}
+          placeholder={t("content.commaPlaceholder")} placeholderTextColor={theme.placeholder} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldDistributors")}</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={distributors} onChangeText={setDistributors}
+          placeholder={t("content.commaPlaceholder")} placeholderTextColor={theme.placeholder} />
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldReleasedAt")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={releasedAt} onChangeText={setReleasedAt}
@@ -431,6 +463,19 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
           </>
         )}
 
+        {studios.length > 0 && (
+          <>
+            <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldStudios")}</Text>
+            <View style={f.chipRow}>
+              {studios.map((s) => (
+                <View key={s} style={[f.chip, { backgroundColor: "#7c3aed22" }]}>
+                  <Text style={[f.chipText, { color: "#7c3aed" }]}>{s}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldRating")}</Text>
         <StarRating value={rating} onChange={setRating} size={28} />
 
@@ -477,6 +522,8 @@ const s = StyleSheet.create({
   filterRow: { flexGrow: 0, marginBottom: 4 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   filterChipText: { fontSize: 13 },
+  filterInputRow: { flexDirection: "row", marginBottom: 4 },
+  filterInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 13 },
   card: { flexDirection: "row", gap: 12, borderRadius: 12, padding: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   cardTitle: { fontSize: 14, fontWeight: "600" },
   cardSub: { fontSize: 12 },
