@@ -588,8 +588,6 @@ const s = StyleSheet.create({
   filterRow: { flexGrow: 0, marginBottom: 4 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   filterChipText: { fontSize: 13 },
-  filterInputRow: { flexDirection: "row", marginBottom: 4 },
-  filterInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 13 },
   card: { flexDirection: "row", gap: 12, borderRadius: 12, padding: 12, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   cardTitle: { fontSize: 14, fontWeight: "600" },
   cardSub: { fontSize: 12 },

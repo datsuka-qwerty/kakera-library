@@ -120,7 +120,7 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">{t("book.metaSearch")}</label>
+        <label className="form-label">{t("book.metaSearch")}</label>
         <div className="flex gap-2">
           <input
             type="text"

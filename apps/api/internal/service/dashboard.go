@@ -18,6 +18,7 @@ type DashboardStats struct {
 	Books  CategoryStats `json:"books"`
 	Movies CategoryStats `json:"movies"`
 	Dramas CategoryStats `json:"dramas"`
+	Animes CategoryStats `json:"animes"`
 }
 
 // DashboardFilter controls which time range to aggregate over.
@@ -66,6 +67,7 @@ func GetDashboardStats(ctx context.Context, userID string, f DashboardFilter) (*
 		Books:  CategoryStats{ByStatus: map[string]int{}, ByMonth: map[string]int{}, ByGenre: map[string]int{}},
 		Movies: CategoryStats{ByStatus: map[string]int{}, ByMonth: map[string]int{}, ByGenre: map[string]int{}},
 		Dramas: CategoryStats{ByStatus: map[string]int{}, ByMonth: map[string]int{}, ByGenre: map[string]int{}},
+		Animes: CategoryStats{ByStatus: map[string]int{}, ByMonth: map[string]int{}, ByGenre: map[string]int{}},
 	}
 
 	// ── Books ──────────────────────────────────────────────────────────────
@@ -223,6 +225,59 @@ func GetDashboardStats(ctx context.Context, userID string, f DashboardFilter) (*
 			var count int
 			rows.Scan(&genre, &count)
 			stats.Dramas.ByGenre[genre] = count
+		}
+		rows.Close()
+	}
+
+	// ── Animes ─────────────────────────────────────────────────────────────
+	regW, regA = registeredWhere("animes", f, 1)
+	args = append([]interface{}{userID}, regA...)
+	rows, err = db.Pool.Query(ctx,
+		fmt.Sprintf(`SELECT status, COUNT(*) FROM animes WHERE user_id=$1%s GROUP BY status`, regW),
+		args...)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var status string
+		var count int
+		rows.Scan(&status, &count)
+		stats.Animes.ByStatus[status] = count
+		stats.Animes.Total += count
+	}
+	rows.Close()
+
+	cmpW, cmpA = completedWhere("watch_started_at", f, 1)
+	args = append([]interface{}{userID}, cmpA...)
+	rows, err = db.Pool.Query(ctx,
+		fmt.Sprintf(`SELECT TO_CHAR(watch_started_at, 'YYYY-MM'), COUNT(*) FROM animes
+		 WHERE user_id=$1 AND status='completed' AND watch_started_at IS NOT NULL%s
+		 GROUP BY 1 ORDER BY 1`, cmpW),
+		args...)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var month string
+		var count int
+		rows.Scan(&month, &count)
+		stats.Animes.ByMonth[month] = count
+	}
+	rows.Close()
+
+	// ── Animes by genre ────────────────────────────────────────────────────
+	regW, regA = registeredWhere("animes", f, 1)
+	args = append([]interface{}{userID}, regA...)
+	rows, err = db.Pool.Query(ctx,
+		fmt.Sprintf(`SELECT g, COUNT(*) FROM animes, unnest(genres) AS g
+		 WHERE user_id=$1%s GROUP BY g ORDER BY 2 DESC LIMIT 20`, regW),
+		args...)
+	if err == nil {
+		for rows.Next() {
+			var genre string
+			var count int
+			rows.Scan(&genre, &count)
+			stats.Animes.ByGenre[genre] = count
 		}
 		rows.Close()
 	}

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Film, Tv } from "lucide-react";
+import { ArrowLeft, BookOpen, Film, Tv, Clapperboard } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend,
@@ -56,28 +56,35 @@ export default function SharedDashboardPage() {
   const dramasByStatus = Object.entries(stats.dramas.byStatus).map(([k, v]) => ({
     name: t(`drama.statuses.${k}`), value: v,
   }));
+  const animesByStatus = Object.entries(stats.animes.byStatus).map(([k, v]) => ({
+    name: t(`anime.statuses.${k}`), value: v,
+  }));
 
   const allMonths = Array.from(new Set([
     ...Object.keys(stats.books.byMonth),
     ...Object.keys(stats.movies.byMonth),
     ...Object.keys(stats.dramas.byMonth),
+    ...Object.keys(stats.animes.byMonth),
   ])).sort();
 
   const booksKey = t("nav.books");
   const moviesKey = t("nav.movies");
   const dramasKey = t("nav.dramas");
+  const animesKey = t("nav.animes");
 
   const monthlyData = allMonths.slice(-12).map((month) => ({
     month: month.slice(5),
     [booksKey]: stats.books.byMonth[month] ?? 0,
     [moviesKey]: stats.movies.byMonth[month] ?? 0,
     [dramasKey]: stats.dramas.byMonth[month] ?? 0,
+    [animesKey]: stats.animes.byMonth[month] ?? 0,
   }));
 
   const statusCharts = [
     { label: t("dashboard.booksStatus"), data: booksByStatus },
     { label: t("dashboard.moviesStatus"), data: moviesByStatus },
     { label: t("dashboard.dramasStatus"), data: dramasByStatus },
+    { label: t("dashboard.animesStatus"), data: animesByStatus },
   ];
 
   return (
@@ -92,10 +99,11 @@ export default function SharedDashboardPage() {
         <h2 className="text-xl font-bold">{t("sharedDashboard.title", { username })}</h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard icon={BookOpen} label={t("dashboard.booksCount", { label: t("dashboard.totalAll") })} value={stats.books.total} color="bg-indigo-500" />
         <StatCard icon={Film} label={t("dashboard.moviesCount", { label: t("dashboard.totalAll") })} value={stats.movies.total} color="bg-emerald-500" />
         <StatCard icon={Tv} label={t("dashboard.dramasCount", { label: t("dashboard.totalAll") })} value={stats.dramas.total} color="bg-amber-500" />
+        <StatCard icon={Clapperboard} label={t("dashboard.animesCount", { label: t("dashboard.totalAll") })} value={stats.animes.total} color="bg-violet-500" />
       </div>
 
       {monthlyData.length > 0 && (
@@ -110,12 +118,13 @@ export default function SharedDashboardPage() {
               <Bar dataKey={booksKey} fill="#6366f1" radius={[3, 3, 0, 0]} />
               <Bar dataKey={moviesKey} fill="#22c55e" radius={[3, 3, 0, 0]} />
               <Bar dataKey={dramasKey} fill="#f59e0b" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={animesKey} fill="#8b5cf6" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {statusCharts.map(({ label, data }) => (
           data.length > 0 && (
             <div key={label} className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">

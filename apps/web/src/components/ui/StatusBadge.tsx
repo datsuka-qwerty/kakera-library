@@ -18,7 +18,7 @@ const colorMap: Record<string, string> = {
 
 interface Props {
   status: string;
-  category: "book" | "movie" | "drama";
+  category: "book" | "movie" | "drama" | "anime";
 }
 
 export default function StatusBadge({ status, category }: Props) {

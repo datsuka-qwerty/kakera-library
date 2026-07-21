@@ -75,6 +75,7 @@ export default function DashboardScreen() {
     { label: t("media.book"), data: stats.books },
     { label: t("media.movie"), data: stats.movies },
     { label: t("media.drama"), data: stats.dramas },
+    { label: t("media.anime"), data: stats.animes },
   ] : [];
 
   const totalLabel = period === "all" ? t("dashboard.totalAll")

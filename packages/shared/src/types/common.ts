@@ -55,4 +55,10 @@ export interface DashboardStats {
     byMonth: Record<string, number>;
     byGenre: Record<string, number>;
   };
+  animes: {
+    total: number;
+    byStatus: Record<string, number>;
+    byMonth: Record<string, number>;
+    byGenre: Record<string, number>;
+  };
 }

@@ -215,7 +215,7 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
           <label className="form-label">{t("anime.studios")}</label>
           <div className="flex flex-wrap gap-1 mt-1">
             {studios.map((s) => (
-              <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+              <span key={s} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
                 {s}
               </span>
             ))}

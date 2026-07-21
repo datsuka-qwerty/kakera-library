@@ -236,7 +236,7 @@ function AnimeRow({ anime, onEdit, onDelete, t }: { anime: Anime; onEdit: (a: An
             {anime.currentSeason && (anime.status === "watching" || anime.status === "dropped") && (
               <span className="text-xs text-gray-400">S{anime.currentSeason}</span>
             )}
-            <StatusBadge status={anime.status} category="drama" />
+            <StatusBadge status={anime.status} category="anime" />
           </div>
         </div>
         <div className="flex items-center gap-3 mt-2 flex-wrap">

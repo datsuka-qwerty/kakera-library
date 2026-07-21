@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Film, Tv, Share2, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Film, Tv, Clapperboard, Share2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -143,6 +143,9 @@ export default function DashboardPage() {
   const dramasByStatus = Object.entries(stats.dramas.byStatus).map(([k, v]) => ({
     name: t(`drama.statuses.${k}`), value: v,
   }));
+  const animesByStatus = Object.entries(stats.animes.byStatus).map(([k, v]) => ({
+    name: t(`anime.statuses.${k}`), value: v,
+  }));
 
   const booksByGenre = Object.entries(stats.books.byGenre ?? {})
     .sort(([, a], [, b]) => b - a).slice(0, 10).map(([k, v]) => ({ name: k, value: v }));
@@ -150,11 +153,14 @@ export default function DashboardPage() {
     .sort(([, a], [, b]) => b - a).slice(0, 10).map(([k, v]) => ({ name: k, value: v }));
   const dramasByGenre = Object.entries(stats.dramas.byGenre ?? {})
     .sort(([, a], [, b]) => b - a).slice(0, 10).map(([k, v]) => ({ name: k, value: v }));
+  const animesByGenre = Object.entries(stats.animes.byGenre ?? {})
+    .sort(([, a], [, b]) => b - a).slice(0, 10).map(([k, v]) => ({ name: k, value: v }));
 
   const allMonths = Array.from(new Set([
     ...Object.keys(stats.books.byMonth),
     ...Object.keys(stats.movies.byMonth),
     ...Object.keys(stats.dramas.byMonth),
+    ...Object.keys(stats.animes.byMonth),
   ])).sort();
 
   const displayMonths = period === "all" ? allMonths.slice(-24) : allMonths;
@@ -162,6 +168,7 @@ export default function DashboardPage() {
   const booksKey = t("nav.books");
   const moviesKey = t("nav.movies");
   const dramasKey = t("nav.dramas");
+  const animesKey = t("nav.animes");
 
   const monthlyData = displayMonths.map((m) => ({
     month: period === "yearly"
@@ -170,6 +177,7 @@ export default function DashboardPage() {
     [booksKey]: stats.books.byMonth[m] ?? 0,
     [moviesKey]: stats.movies.byMonth[m] ?? 0,
     [dramasKey]: stats.dramas.byMonth[m] ?? 0,
+    [animesKey]: stats.animes.byMonth[m] ?? 0,
   }));
 
   const barChartTitle = period === "monthly"
@@ -186,12 +194,14 @@ export default function DashboardPage() {
     { label: t("dashboard.booksStatus"), data: booksByStatus },
     { label: t("dashboard.moviesStatus"), data: moviesByStatus },
     { label: t("dashboard.dramasStatus"), data: dramasByStatus },
+    { label: t("dashboard.animesStatus"), data: animesByStatus },
   ];
 
   const genreCharts = [
     { label: t("dashboard.booksGenre"), data: booksByGenre, color: "#6366f1" },
     { label: t("dashboard.moviesGenre"), data: moviesByGenre, color: "#22c55e" },
     { label: t("dashboard.dramasGenre"), data: dramasByGenre, color: "#f59e0b" },
+    { label: t("dashboard.animesGenre"), data: animesByGenre, color: "#8b5cf6" },
   ];
 
   return (
@@ -214,10 +224,11 @@ export default function DashboardPage() {
         onChangePeriod={setPeriod} onChangeYear={setYear} onChangeMonth={setMonth}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard icon={BookOpen} label={t("dashboard.booksCount", { label: totalLabel })} value={stats.books.total} color="bg-indigo-500" />
         <StatCard icon={Film} label={t("dashboard.moviesCount", { label: totalLabel })} value={stats.movies.total} color="bg-emerald-500" />
         <StatCard icon={Tv} label={t("dashboard.dramasCount", { label: totalLabel })} value={stats.dramas.total} color="bg-amber-500" />
+        <StatCard icon={Clapperboard} label={t("dashboard.animesCount", { label: totalLabel })} value={stats.animes.total} color="bg-violet-500" />
       </div>
 
       {monthlyData.length > 0 && (
@@ -232,12 +243,13 @@ export default function DashboardPage() {
               <Bar dataKey={booksKey} fill="#6366f1" radius={[3, 3, 0, 0]} />
               <Bar dataKey={moviesKey} fill="#22c55e" radius={[3, 3, 0, 0]} />
               <Bar dataKey={dramasKey} fill="#f59e0b" radius={[3, 3, 0, 0]} />
+              <Bar dataKey={animesKey} fill="#8b5cf6" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {pieCharts.map(({ label, data }) => (
           data.length > 0 && (
             <div key={label} className="p-5 rounded-xl bg-surface-elevated-light dark:bg-surface-elevated-dark border border-gray-200 dark:border-gray-700">

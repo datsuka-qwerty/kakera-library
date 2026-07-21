@@ -130,6 +130,7 @@ export type DashStats = {
   books: { total: number; byStatus: Record<string, number>; byMonth: Record<string, number>; byGenre: Record<string, number> };
   movies: { total: number; byStatus: Record<string, number>; byMonth: Record<string, number>; byGenre: Record<string, number> };
   dramas: { total: number; byStatus: Record<string, number>; byMonth: Record<string, number>; byGenre: Record<string, number> };
+  animes: { total: number; byStatus: Record<string, number>; byMonth: Record<string, number>; byGenre: Record<string, number> };
 };
 
 export interface DashboardFilter {
