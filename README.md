@@ -2,7 +2,7 @@
 
 A self-hosted library management system to collect and track the content you've experienced in life.
 
-Books, movies, and TV dramas — ratings, notes, and sharing — all in one place.
+Books, movies, TV dramas, and anime series — ratings, notes, and sharing — all in one place.
 
 > This product uses the TMDB API but is not endorsed or certified by TMDB.
 
@@ -11,11 +11,12 @@ Books, movies, and TV dramas — ratings, notes, and sharing — all in one plac
 ## Features
 
 - 📚 Book management — series, ownership status, reading status, ISBN barcode scan
-- 🎬 Movie management — viewing format, series grouping, TMDB integration
-- 📺 TV drama management — seasons and viewing progress
-- ⭐ 5-star ratings, tags, and notes
+- 🎬 Movie management — viewing format, series grouping, TMDB metadata auto-fill
+- 📺 TV drama management — seasons, viewing progress, TMDB metadata auto-fill
+- 🎌 Anime management — series grouping, seasons, studio and director tracking, TMDB metadata auto-fill
+- ⭐ 5-star ratings, tags, and notes across all content types
 - 👥 Multi-user support with dashboard sharing and one-way rating visibility
-- 📊 Dashboard with monthly statistics and status distribution charts
+- 📊 Dashboard with per-type statistics, monthly activity charts, and genre/status distribution
 - 📱 Web + Android + iOS via React Native + Expo
 - 🐳 Self-hosted via Docker Compose
 - 🔐 JWT authentication with optional TOTP via Google Authenticator
@@ -100,7 +101,7 @@ Docker Compose automatically creates two volumes:
 
 | Volume | Mount | Contents | If removed |
 |--------|-------|----------|-----------|
-| `postgres_data` | `/var/lib/postgresql/data` | All data: books, movies, dramas, users, settings | **All data is permanently lost** |
+| `postgres_data` | `/var/lib/postgresql/data` | All data: books, movies, dramas, animes, users, settings | **All data is permanently lost** |
 | `backups` | `/backups` | Snapshots created by the backup feature — `.sql.gz` | Backup history is lost |
 
 > `docker compose down` preserves volumes. `docker compose down -v` **deletes them**.
@@ -174,7 +175,7 @@ TMDB_API_KEY=...
 ```
 
 > **TMDB attribution is required by their Terms of Use.**
-> The web UI automatically displays TMDB credit on all movie and drama pages.
+> The web UI automatically displays TMDB credit on all movie, drama, and anime pages.
 
 ---
 
