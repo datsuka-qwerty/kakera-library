@@ -11,12 +11,14 @@ import (
 func ListDramas(c echo.Context) error {
 	userID := c.Get("userId").(string)
 	f := service.ListFilter{
-		Search: c.QueryParam("search"),
-		Status: c.QueryParam("status"),
-		Genre:  c.QueryParam("genre"),
-		Tag:    c.QueryParam("tag"),
-		Sort:   c.QueryParam("sort"),
-		Order:  c.QueryParam("order"),
+		Search:   c.QueryParam("search"),
+		Status:   c.QueryParam("status"),
+		Genre:    c.QueryParam("genre"),
+		Tag:      c.QueryParam("tag"),
+		Director: c.QueryParam("director"),
+		Studio:   c.QueryParam("studio"),
+		Sort:     c.QueryParam("sort"),
+		Order:    c.QueryParam("order"),
 	}
 	if r := c.QueryParam("rating"); r != "" {
 		v, _ := strconv.Atoi(r)

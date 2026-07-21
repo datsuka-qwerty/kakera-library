@@ -38,14 +38,20 @@ export default function AnimesPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [groupBySeries, setGroupBySeries] = useState(true);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
+  const [director, setDirector] = useState("");
+  const [studio, setStudio] = useState("");
+
+  const { data: options } = useQuery({ queryKey: ["animes-options"], queryFn: animesApi.getOptions });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["animes", { search, status, genre, filterTag, minRating, page: groupBySeries ? 1 : page, sort, order }],
+    queryKey: ["animes", { search, status, genre, filterTag, director, studio, minRating, page: groupBySeries ? 1 : page, sort, order }],
     queryFn: () => animesApi.list({
       search: search || undefined,
       status: status || undefined,
       genre: genre || undefined,
       tag: filterTag || undefined,
+      director: director || undefined,
+      studio: studio || undefined,
       rating: minRating ? parseInt(minRating) : undefined,
       page: groupBySeries ? 1 : page,
       perPage: groupBySeries ? 500 : 20,
@@ -136,14 +142,28 @@ export default function AnimesPage() {
         </select>
       </div>
       <div className="flex items-center gap-3 flex-wrap">
-        <input value={genre} onChange={(e) => { setGenre(e.target.value); setPage(1); }} placeholder={t("content.filterGenre")} className="input w-36 text-sm" />
-        <input value={filterTag} onChange={(e) => { setFilterTag(e.target.value); setPage(1); }} placeholder={t("content.filterTag")} className="input w-36 text-sm" />
+        <select value={genre} onChange={(e) => { setGenre(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allGenres")}</option>
+          {(options?.genres ?? []).map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        <select value={filterTag} onChange={(e) => { setFilterTag(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allTags")}</option>
+          {(options?.tags ?? []).map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+        </select>
+        <select value={director} onChange={(e) => { setDirector(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allDirectors")}</option>
+          {(options?.directors ?? []).map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <select value={studio} onChange={(e) => { setStudio(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allStudios")}</option>
+          {(options?.studios ?? []).map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
         <select value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1); }} className="input w-auto text-sm">
           <option value="">{t("content.filterMinRating")}</option>
           {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r}+</option>)}
         </select>
-        {(genre || filterTag || minRating) && (
-          <button onClick={() => { setGenre(""); setFilterTag(""); setMinRating(""); setPage(1); }} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+        {(genre || filterTag || director || studio || minRating) && (
+          <button onClick={() => { setGenre(""); setFilterTag(""); setDirector(""); setStudio(""); setMinRating(""); setPage(1); }} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
             {t("content.filterClear")}
           </button>
         )}

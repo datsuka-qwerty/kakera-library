@@ -26,6 +26,7 @@ type Anime struct {
 	Status               string         `json:"status"`
 	MediaTypes           []string       `json:"mediaTypes"`
 	Genres               []string       `json:"genres"`
+	Directors            []string       `json:"directors"`
 	Studios              []string       `json:"studios"`
 	Rating               *int           `json:"rating"`
 	Tags                 []string       `json:"tags"`
@@ -55,6 +56,7 @@ type AnimeInput struct {
 	Status               string
 	MediaTypes           []string
 	Genres               []string
+	Directors            []string
 	Studios              []string
 	Rating               *int
 	Tags                 []string
@@ -74,7 +76,8 @@ func ListAnimes(ctx context.Context, userID string, f ListFilter) (*AnimeListRes
 		SELECT animes.id, animes.user_id, animes.title, animes.series_name, animes.total_seasons,
 		       animes.first_season_aired_at::text, animes.current_season_aired_at::text,
 		       animes.watch_started_at::text, animes.current_season, animes.cover_image_url,
-		       animes.status, animes.media_types, animes.genres, animes.studios, animes.rating, animes.memo, animes.tmdb_id,
+		       animes.status, animes.media_types, animes.genres, animes.directors, animes.studios,
+		       animes.rating, animes.memo, animes.tmdb_id,
 		       animes.created_at::text, animes.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM animes
@@ -102,7 +105,8 @@ func GetAnime(ctx context.Context, userID, id string) (*Anime, error) {
 		SELECT a.id, a.user_id, a.title, a.series_name, a.total_seasons,
 		       a.first_season_aired_at::text, a.current_season_aired_at::text,
 		       a.watch_started_at::text, a.current_season, a.cover_image_url,
-		       a.status, a.media_types, a.genres, a.studios, a.rating, a.memo, a.tmdb_id,
+		       a.status, a.media_types, a.genres, a.directors, a.studios,
+		       a.rating, a.memo, a.tmdb_id,
 		       a.created_at::text, a.updated_at::text,
 		       COALESCE(array_agg(t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS tags
 		FROM animes a
@@ -128,6 +132,9 @@ func CreateAnime(ctx context.Context, userID string, input AnimeInput) (*Anime, 
 		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
 		input.CoverImageURL = &stored
 	}
+	if input.Directors == nil {
+		input.Directors = []string{}
+	}
 	if input.Studios == nil {
 		input.Studios = []string{}
 	}
@@ -135,12 +142,12 @@ func CreateAnime(ctx context.Context, userID string, input AnimeInput) (*Anime, 
 	_, err := db.Pool.Exec(ctx, `
 		INSERT INTO animes (id, user_id, title, series_name, total_seasons,
 		  first_season_aired_at, current_season_aired_at, watch_started_at,
-		  current_season, cover_image_url, status, media_types, genres, studios, rating, memo, tmdb_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		  current_season, cover_image_url, status, media_types, genres, directors, studios, rating, memo, tmdb_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Genres, input.Studios, input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Directors, input.Studios, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -157,6 +164,9 @@ func UpdateAnime(ctx context.Context, userID, id string, input AnimeInput) (*Ani
 		stored := DownloadAndStoreImage(ctx, *input.CoverImageURL)
 		input.CoverImageURL = &stored
 	}
+	if input.Directors == nil {
+		input.Directors = []string{}
+	}
 	if input.Studios == nil {
 		input.Studios = []string{}
 	}
@@ -166,12 +176,12 @@ func UpdateAnime(ctx context.Context, userID, id string, input AnimeInput) (*Ani
 		  title=$3, series_name=$4, total_seasons=$5,
 		  first_season_aired_at=$6, current_season_aired_at=$7, watch_started_at=$8,
 		  current_season=$9, cover_image_url=$10, status=$11, media_types=$12,
-		  genres=$13, studios=$14, rating=$15, memo=$16, tmdb_id=$17, updated_at=NOW()
+		  genres=$13, directors=$14, studios=$15, rating=$16, memo=$17, tmdb_id=$18, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 	`, id, userID, input.Title, input.SeriesName, input.TotalSeasons,
 		input.FirstSeasonAiredAt, input.CurrentSeasonAiredAt, input.WatchStartedAt,
 		input.CurrentSeason, input.CoverImageURL, input.Status, input.MediaTypes,
-		input.Genres, input.Studios, input.Rating, input.Memo, input.TmdbID,
+		input.Genres, input.Directors, input.Studios, input.Rating, input.Memo, input.TmdbID,
 	)
 	if err != nil {
 		return nil, err
@@ -222,7 +232,8 @@ func scanAnimes(rows pgx.Rows) ([]Anime, error) {
 			&a.ID, &a.UserID, &a.Title, &a.SeriesName, &a.TotalSeasons,
 			&a.FirstSeasonAiredAt, &a.CurrentSeasonAiredAt,
 			&a.WatchStartedAt, &a.CurrentSeason, &a.CoverImageURL,
-			&a.Status, &a.MediaTypes, &a.Genres, &a.Studios, &a.Rating, &a.Memo, &a.TmdbID,
+			&a.Status, &a.MediaTypes, &a.Genres, &a.Directors, &a.Studios,
+			&a.Rating, &a.Memo, &a.TmdbID,
 			&a.CreatedAt, &a.UpdatedAt, &a.Tags,
 		); err != nil {
 			return nil, err

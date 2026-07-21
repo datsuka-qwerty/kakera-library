@@ -7,11 +7,20 @@ export interface DramaListParams {
   status?: string;
   genre?: string;
   tag?: string;
+  director?: string;
+  studio?: string;
   rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
   order?: string;
+}
+
+export interface DramaFilterOptions {
+  genres: string[];
+  tags: string[];
+  directors: string[];
+  studios: string[];
 }
 
 export interface PaginatedDramas {
@@ -34,4 +43,6 @@ export const dramasApi = {
     apiClient.delete(`/dramas/${id}`),
   searchMeta: (q: string, page = 1) =>
     apiClient.get<ContentMeta[]>("/metadata/dramas", { params: { q, page } }).then((r) => r.data),
+  getOptions: () =>
+    apiClient.get<DramaFilterOptions>("/dramas/options").then((r) => r.data),
 };

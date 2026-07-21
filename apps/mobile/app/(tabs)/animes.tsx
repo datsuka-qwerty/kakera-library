@@ -36,6 +36,13 @@ export default function AnimesScreen() {
   const [groupBySeries, setGroupBySeries] = useState(true);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState(false);
+  const [director, setDirector] = useState("");
+  const [studio, setStudio] = useState("");
+  const [filterOptions, setFilterOptions] = useState<{ genres: string[]; tags: string[]; directors: string[]; studios: string[] }>({ genres: [], tags: [], directors: [], studios: [] });
+
+  useEffect(() => {
+    animesApi.getOptions().then(setFilterOptions).catch(() => {});
+  }, []);
 
   const seriesGroups = useMemo(() => {
     const groups = new Map<string, Anime[]>();
@@ -64,6 +71,8 @@ export default function AnimesScreen() {
         search, status, perPage: 100,
         genre: genre || undefined,
         tag: filterTag || undefined,
+        director: director || undefined,
+        studio: studio || undefined,
         rating: minRating > 0 ? minRating : undefined,
       });
       setAnimes(res.data);
@@ -73,7 +82,7 @@ export default function AnimesScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, genre, filterTag, minRating]);
+  }, [search, status, genre, filterTag, director, studio, minRating]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -118,12 +127,54 @@ export default function AnimesScreen() {
           </Pressable>
         ))}
       </ScrollView>
-      <View style={[s.filterInputRow, { paddingHorizontal: 16, gap: 8 }]}>
-        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
-          placeholder={t("content.filterGenre")} placeholderTextColor={theme.placeholder} value={genre} onChangeText={setGenre} onSubmitEditing={load} returnKeyType="search" />
-        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
-          placeholder={t("content.filterTag")} placeholderTextColor={theme.placeholder} value={filterTag} onChangeText={setFilterTag} onSubmitEditing={load} returnKeyType="search" />
-      </View>
+      {filterOptions.genres.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: genre === "" ? accent : theme.borderLight }]} onPress={() => setGenre("")}>
+            <Text style={[s.filterChipText, { color: genre === "" ? "#fff" : theme.textSub }]}>{t("content.allGenres")}</Text>
+          </Pressable>
+          {filterOptions.genres.map((g) => (
+            <Pressable key={g} style={[s.filterChip, { backgroundColor: genre === g ? accent : theme.borderLight }]} onPress={() => setGenre(genre === g ? "" : g)}>
+              <Text style={[s.filterChipText, { color: genre === g ? "#fff" : theme.textSub }]}>{g}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.tags.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: filterTag === "" ? accent : theme.borderLight }]} onPress={() => setFilterTag("")}>
+            <Text style={[s.filterChipText, { color: filterTag === "" ? "#fff" : theme.textSub }]}>{t("content.allTags")}</Text>
+          </Pressable>
+          {filterOptions.tags.map((tag) => (
+            <Pressable key={tag} style={[s.filterChip, { backgroundColor: filterTag === tag ? accent : theme.borderLight }]} onPress={() => setFilterTag(filterTag === tag ? "" : tag)}>
+              <Text style={[s.filterChipText, { color: filterTag === tag ? "#fff" : theme.textSub }]}>{tag}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.directors.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: director === "" ? accent : theme.borderLight }]} onPress={() => setDirector("")}>
+            <Text style={[s.filterChipText, { color: director === "" ? "#fff" : theme.textSub }]}>{t("content.allDirectors")}</Text>
+          </Pressable>
+          {filterOptions.directors.map((d) => (
+            <Pressable key={d} style={[s.filterChip, { backgroundColor: director === d ? accent : theme.borderLight }]} onPress={() => setDirector(director === d ? "" : d)}>
+              <Text style={[s.filterChipText, { color: director === d ? "#fff" : theme.textSub }]}>{d}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.studios.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: studio === "" ? accent : theme.borderLight }]} onPress={() => setStudio("")}>
+            <Text style={[s.filterChipText, { color: studio === "" ? "#fff" : theme.textSub }]}>{t("content.allStudios")}</Text>
+          </Pressable>
+          {filterOptions.studios.map((st) => (
+            <Pressable key={st} style={[s.filterChip, { backgroundColor: studio === st ? accent : theme.borderLight }]} onPress={() => setStudio(studio === st ? "" : st)}>
+              <Text style={[s.filterChipText, { color: studio === st ? "#fff" : theme.textSub }]}>{st}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginBottom: 4 }]}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {[0, 1, 2, 3, 4, 5].map((r) => (
@@ -255,6 +306,7 @@ function AnimeForm({ initial, onCancel, onSaved }: FormProps) {
   const [memo, setMemo] = useState(initial?.memo ?? "");
   const [mediaTypes, setMediaTypes] = useState<string[]>(initial?.mediaTypes ?? []);
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
+  const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
   const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string; category: string }[]>([]);
   const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; totalSeasons?: number; studios?: string[] }[]>([]);
@@ -330,6 +382,7 @@ function AnimeForm({ initial, onCancel, onSaved }: FormProps) {
         status,
         mediaTypes,
         genres,
+        directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
         studios,
         rating,
         tags,
@@ -444,6 +497,10 @@ function AnimeForm({ initial, onCancel, onSaved }: FormProps) {
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldCoverImageUrl")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={coverImageUrl} onChangeText={setCoverImageUrl} autoCapitalize="none" />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldDirectors")}</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={directors} onChangeText={setDirectors}
+          placeholder={t("content.commaPlaceholder")} placeholderTextColor={theme.placeholder} />
 
         {studios.length > 0 && (
           <>

@@ -224,7 +224,15 @@
     "filterGenre": "Filter by genre",
     "filterTag": "Filter by tag",
     "filterMinRating": "Min. rating",
-    "filterClear": "Clear filters"
+    "filterClear": "Clear filters",
+    "allGenres": "All Genres",
+    "allTags": "All Tags",
+    "allPublishers": "All Publishers",
+    "allAuthors": "All Authors",
+    "allMediaTypes": "All Media Types",
+    "allDirectors": "All Directors",
+    "allStudios": "All Studios",
+    "allDistributors": "All Distributors"
   },
   "shareModal": {
     "dashboardTitle": "Share Dashboard",
@@ -340,6 +348,8 @@
     "coverImageUrl": "Cover Image URL",
     "status": "Watch Status",
     "mediaTypes": "Media",
+    "directors": "Directors",
+    "directorsPlaceholder": "Separate with commas",
     "studios": "Studios",
     "rating": "Rating",
     "genre": "Genre",

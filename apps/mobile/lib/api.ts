@@ -18,12 +18,23 @@ export interface ListParams {
   status?: string;
   genre?: string;
   tag?: string;
+  author?: string;
+  publisher?: string;
+  mediaType?: string;
+  director?: string;
+  studio?: string;
+  distributor?: string;
   rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
   order?: string;
 }
+
+export interface BookFilterOptions { genres: string[]; tags: string[]; publishers: string[]; authors: string[]; mediaTypes: string[] }
+export interface MovieFilterOptions { genres: string[]; tags: string[]; directors: string[]; distributors: string[]; studios: string[] }
+export interface DramaFilterOptions { genres: string[]; tags: string[]; directors: string[]; studios: string[] }
+export interface AnimeFilterOptions { genres: string[]; tags: string[]; directors: string[]; studios: string[] }
 
 export interface BookMeta {
   googleBooksId: string;
@@ -77,6 +88,7 @@ export const booksApi = {
   delete: (id: string) => api.delete(`/books/${id}`),
   searchMeta: (q: string, page = 1) => api.get<BookMeta[]>("/metadata/books", { q, page }),
   lookupISBN: (isbn: string) => api.get<BookMeta>(`/metadata/barcode/${isbn}`),
+  getOptions: () => api.get<BookFilterOptions>("/books/options"),
 };
 
 export const moviesApi = {
@@ -85,6 +97,7 @@ export const moviesApi = {
   update: (id: string, data: Partial<MovieCreateInput>) => api.put<Movie>(`/movies/${id}`, data),
   delete: (id: string) => api.delete(`/movies/${id}`),
   searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/movies", { q, page }),
+  getOptions: () => api.get<MovieFilterOptions>("/movies/options"),
 };
 
 export const dramasApi = {
@@ -93,6 +106,7 @@ export const dramasApi = {
   update: (id: string, data: Partial<DramaCreateInput>) => api.put<Drama>(`/dramas/${id}`, data),
   delete: (id: string) => api.delete(`/dramas/${id}`),
   searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/dramas", { q, page }),
+  getOptions: () => api.get<DramaFilterOptions>("/dramas/options"),
 };
 
 export const animesApi = {
@@ -101,6 +115,7 @@ export const animesApi = {
   update: (id: string, data: Partial<AnimeCreateInput>) => api.put<Anime>(`/animes/${id}`, data),
   delete: (id: string) => api.delete(`/animes/${id}`),
   searchMeta: (q: string, page = 1) => api.get<ContentMeta[]>("/metadata/animes", { q, page }),
+  getOptions: () => api.get<AnimeFilterOptions>("/animes/options"),
 };
 
 export const mediaTypesApi = {

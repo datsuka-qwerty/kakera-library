@@ -18,6 +18,7 @@ export interface Anime {
   status: AnimeStatus;
   mediaTypes: AnimeMediaType[];
   genres: string[];
+  directors: string[];
   studios: string[];
   rating?: number;
   tags: string[];
@@ -40,6 +41,7 @@ export interface AnimeCreateInput {
   status: AnimeStatus;
   mediaTypes: AnimeMediaType[];
   genres?: string[];
+  directors?: string[];
   studios?: string[];
   rating?: number;
   tags?: string[];

@@ -6,16 +6,23 @@ import (
 )
 
 type ListFilter struct {
-	Search    string
-	Status    string
-	Tags      []string
-	Rating    *int
-	Genre     string
-	Tag       string
-	Page      int
-	PerPage   int
-	Sort      string
-	Order     string
+	Search          string
+	Status          string
+	Tags            []string
+	Rating          *int
+	Genre           string
+	Tag             string
+	// content-type-specific filters
+	Author          string // books
+	Publisher       string // books
+	MediaTypeFilter string // all (media_types column)
+	Director        string // movies, dramas, animes
+	Studio          string // movies, dramas, animes
+	Distributor     string // movies
+	Page            int
+	PerPage         int
+	Sort            string
+	Order           string
 }
 
 var allowedSortCols = map[string]map[string]string{
@@ -115,6 +122,31 @@ func buildWhere(userID, table string, f ListFilter) (string, []any) {
 				tj[0], tj[1], table, len(args),
 			))
 		}
+	}
+
+	if f.Author != "" && table == "books" {
+		args = append(args, f.Author)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.authors)", len(args), table))
+	}
+	if f.Publisher != "" && table == "books" {
+		args = append(args, f.Publisher)
+		conds = append(conds, fmt.Sprintf("%s.publisher = $%d", table, len(args)))
+	}
+	if f.MediaTypeFilter != "" {
+		args = append(args, f.MediaTypeFilter)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.media_types)", len(args), table))
+	}
+	if f.Director != "" && (table == "movies" || table == "dramas" || table == "animes") {
+		args = append(args, f.Director)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.directors)", len(args), table))
+	}
+	if f.Studio != "" && (table == "movies" || table == "dramas" || table == "animes") {
+		args = append(args, f.Studio)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.studios)", len(args), table))
+	}
+	if f.Distributor != "" && table == "movies" {
+		args = append(args, f.Distributor)
+		conds = append(conds, fmt.Sprintf("$%d = ANY(%s.distributors)", len(args), table))
 	}
 
 	return strings.Join(conds, " AND "), args

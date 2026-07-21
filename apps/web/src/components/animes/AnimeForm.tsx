@@ -30,6 +30,7 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
   const [status, setStatus] = useState<AnimeStatus>(initial?.status ?? "interested");
   const [mediaTypes, setMediaTypes] = useState<string[]>(initial?.mediaTypes ?? []);
+  const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
   const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [rating, setRating] = useState<number | undefined>(initial?.rating ?? undefined);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
@@ -75,6 +76,7 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.totalSeasons) setTotalSeasons(meta.totalSeasons.toString());
     if (meta.genres?.length) setGenres(meta.genres);
     if (meta.studios?.length) setStudios(meta.studios);
+    if ((meta as { directors?: string[] }).directors?.length) setDirectors(((meta as { directors?: string[] }).directors ?? []).join(", "));
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -101,6 +103,7 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
       status,
       mediaTypes,
       genres,
+      directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
       studios,
       rating,
       tags,
@@ -201,6 +204,11 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
             </label>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="form-label">{t("anime.directors")}</label>
+        <input value={directors} onChange={(e) => setDirectors(e.target.value)} placeholder={t("anime.directorsPlaceholder")} className="input" />
       </div>
 
       {studios.length > 0 && (

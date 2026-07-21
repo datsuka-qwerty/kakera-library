@@ -6,11 +6,22 @@ export interface MovieListParams {
   status?: string;
   genre?: string;
   tag?: string;
+  director?: string;
+  studio?: string;
+  distributor?: string;
   rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
   order?: string;
+}
+
+export interface MovieFilterOptions {
+  genres: string[];
+  tags: string[];
+  directors: string[];
+  distributors: string[];
+  studios: string[];
 }
 
 export interface PaginatedMovies {
@@ -45,4 +56,6 @@ export const moviesApi = {
     apiClient.delete(`/movies/${id}`),
   searchMeta: (q: string, page = 1) =>
     apiClient.get<ContentMeta[]>("/metadata/movies", { params: { q, page } }).then((r) => r.data),
+  getOptions: () =>
+    apiClient.get<MovieFilterOptions>("/movies/options").then((r) => r.data),
 };

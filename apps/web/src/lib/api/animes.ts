@@ -7,11 +7,20 @@ export interface AnimeListParams {
   status?: string;
   genre?: string;
   tag?: string;
+  director?: string;
+  studio?: string;
   rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
   order?: string;
+}
+
+export interface AnimeFilterOptions {
+  genres: string[];
+  tags: string[];
+  directors: string[];
+  studios: string[];
 }
 
 export interface PaginatedAnimes {
@@ -34,4 +43,6 @@ export const animesApi = {
     apiClient.delete(`/animes/${id}`),
   searchMeta: (q: string, page = 1) =>
     apiClient.get<ContentMeta[]>("/metadata/animes", { params: { q, page } }).then((r) => r.data),
+  getOptions: () =>
+    apiClient.get<AnimeFilterOptions>("/animes/options").then((r) => r.data),
 };

@@ -224,7 +224,15 @@
     "filterGenre": "ジャンルで絞り込み",
     "filterTag": "タグで絞り込み",
     "filterMinRating": "最低評価",
-    "filterClear": "絞り込みを解除"
+    "filterClear": "絞り込みを解除",
+    "allGenres": "すべてのジャンル",
+    "allTags": "すべてのタグ",
+    "allPublishers": "すべての出版社",
+    "allAuthors": "すべての著者",
+    "allMediaTypes": "すべての所有形態",
+    "allDirectors": "すべての監督",
+    "allStudios": "すべての制作会社",
+    "allDistributors": "すべての配給会社"
   },
   "shareModal": {
     "dashboardTitle": "ダッシュボードを共有",
@@ -340,6 +348,8 @@
     "coverImageUrl": "カバー画像URL",
     "status": "視聴ステータス",
     "mediaTypes": "視聴媒体",
+    "directors": "監督",
+    "directorsPlaceholder": "カンマ区切り",
     "studios": "制作会社",
     "rating": "評価",
     "genre": "ジャンル",

@@ -36,6 +36,13 @@ export default function BooksScreen() {
   const [groupBySeries, setGroupBySeries] = useState(true);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState(false);
+  const [publisher, setPublisher] = useState("");
+  const [author, setAuthor] = useState("");
+  const [filterOptions, setFilterOptions] = useState<{ genres: string[]; tags: string[]; publishers: string[]; authors: string[]; mediaTypes: string[] }>({ genres: [], tags: [], publishers: [], authors: [], mediaTypes: [] });
+
+  useEffect(() => {
+    booksApi.getOptions().then(setFilterOptions).catch(() => {});
+  }, []);
 
   const seriesGroups = useMemo(() => {
     const groups = new Map<string, Book[]>();
@@ -62,6 +69,8 @@ export default function BooksScreen() {
         search, status, perPage: 100,
         genre: genre || undefined,
         tag: filterTag || undefined,
+        publisher: publisher || undefined,
+        author: author || undefined,
         rating: minRating > 0 ? minRating : undefined,
       });
       setBooks(res.data);
@@ -71,7 +80,7 @@ export default function BooksScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, genre, filterTag, minRating]);
+  }, [search, status, genre, filterTag, publisher, author, minRating]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -119,12 +128,54 @@ export default function BooksScreen() {
           </Pressable>
         ))}
       </ScrollView>
-      <View style={[s.filterInputRow, { paddingHorizontal: 16, gap: 8 }]}>
-        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
-          placeholder={t("content.filterGenre")} placeholderTextColor={theme.placeholder} value={genre} onChangeText={setGenre} onSubmitEditing={load} returnKeyType="search" />
-        <TextInput style={[s.filterInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text, flex: 1 }]}
-          placeholder={t("content.filterTag")} placeholderTextColor={theme.placeholder} value={filterTag} onChangeText={setFilterTag} onSubmitEditing={load} returnKeyType="search" />
-      </View>
+      {filterOptions.genres.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: genre === "" ? accent : theme.borderLight }]} onPress={() => setGenre("")}>
+            <Text style={[s.filterChipText, { color: genre === "" ? "#fff" : theme.textSub }]}>{t("content.allGenres")}</Text>
+          </Pressable>
+          {filterOptions.genres.map((g) => (
+            <Pressable key={g} style={[s.filterChip, { backgroundColor: genre === g ? accent : theme.borderLight }]} onPress={() => setGenre(genre === g ? "" : g)}>
+              <Text style={[s.filterChipText, { color: genre === g ? "#fff" : theme.textSub }]}>{g}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.tags.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: filterTag === "" ? accent : theme.borderLight }]} onPress={() => setFilterTag("")}>
+            <Text style={[s.filterChipText, { color: filterTag === "" ? "#fff" : theme.textSub }]}>{t("content.allTags")}</Text>
+          </Pressable>
+          {filterOptions.tags.map((tag) => (
+            <Pressable key={tag} style={[s.filterChip, { backgroundColor: filterTag === tag ? accent : theme.borderLight }]} onPress={() => setFilterTag(filterTag === tag ? "" : tag)}>
+              <Text style={[s.filterChipText, { color: filterTag === tag ? "#fff" : theme.textSub }]}>{tag}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.publishers.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: publisher === "" ? accent : theme.borderLight }]} onPress={() => setPublisher("")}>
+            <Text style={[s.filterChipText, { color: publisher === "" ? "#fff" : theme.textSub }]}>{t("content.allPublishers")}</Text>
+          </Pressable>
+          {filterOptions.publishers.map((p) => (
+            <Pressable key={p} style={[s.filterChip, { backgroundColor: publisher === p ? accent : theme.borderLight }]} onPress={() => setPublisher(publisher === p ? "" : p)}>
+              <Text style={[s.filterChipText, { color: publisher === p ? "#fff" : theme.textSub }]}>{p}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {filterOptions.authors.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          <Pressable style={[s.filterChip, { backgroundColor: author === "" ? accent : theme.borderLight }]} onPress={() => setAuthor("")}>
+            <Text style={[s.filterChipText, { color: author === "" ? "#fff" : theme.textSub }]}>{t("content.allAuthors")}</Text>
+          </Pressable>
+          {filterOptions.authors.map((a) => (
+            <Pressable key={a} style={[s.filterChip, { backgroundColor: author === a ? accent : theme.borderLight }]} onPress={() => setAuthor(author === a ? "" : a)}>
+              <Text style={[s.filterChipText, { color: author === a ? "#fff" : theme.textSub }]}>{a}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginBottom: 4 }]}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {[0, 1, 2, 3, 4, 5].map((r) => (
@@ -240,10 +291,10 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
   const { language } = useLanguageStore();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
-  const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
   const [authors, setAuthors] = useState(initial?.authors?.join(", ") ?? "");
   const [isbn, setIsbn] = useState(initial?.isbn ?? "");
   const [publisher, setPublisher] = useState(initial?.publisher ?? "");
+  const [publishedAt, setPublishedAt] = useState(initial?.publishedAt ?? "");
   const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
   const [status, setStatus] = useState<BookStatus>(initial?.status ?? "want_to_read");
   const [purchasePlace, setPurchasePlace] = useState(initial?.purchasePlace ?? "");
@@ -316,10 +367,10 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
       const payload = {
         title: title.trim(),
         seriesName: seriesName.trim() || undefined,
-        seriesOrder: seriesOrder ? parseInt(seriesOrder, 10) : undefined,
         authors: authors.split(",").map((a) => a.trim()).filter(Boolean),
         isbn: isbn.trim() || undefined,
         publisher: publisher.trim() || undefined,
+        publishedAt: publishedAt.trim() || undefined,
         coverImageUrl: coverImageUrl.trim() || undefined,
         status,
         mediaTypes,
@@ -404,14 +455,15 @@ function BookForm({ initial, onCancel, onSaved }: FormProps) {
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldSeriesName")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesName} onChangeText={setSeriesName} />
 
-        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldVolume")}</Text>
-        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesOrder} onChangeText={setSeriesOrder} keyboardType="number-pad" />
-
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldAuthors")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={authors} onChangeText={setAuthors} />
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldPublisher")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={publisher} onChangeText={setPublisher} />
+
+        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldPublishedAt")}</Text>
+        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={publishedAt} onChangeText={setPublishedAt}
+          placeholder="2024-01-01" placeholderTextColor={theme.placeholder} />
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldIsbn")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={isbn} onChangeText={setIsbn} keyboardType="number-pad" />

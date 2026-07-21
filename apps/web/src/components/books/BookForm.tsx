@@ -22,7 +22,6 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
   const { t, i18n } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
-  const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
   const [authors, setAuthors] = useState(initial?.authors?.join(", ") ?? "");
   const [isbn, setIsbn] = useState(initial?.isbn ?? "");
   const [publisher, setPublisher] = useState(initial?.publisher ?? "");
@@ -80,7 +79,11 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     setGoogleBooksId(meta.googleBooksId);
     if (meta.genres?.length) setGenres(meta.genres);
-    if (meta.publishedAt) setPublishedAt(meta.publishedAt);
+    if (meta.publishedAt) {
+      const parts = meta.publishedAt.split("-");
+      const normalized = parts.length === 1 ? `${parts[0]}-01-01` : parts.length === 2 ? `${parts[0]}-${parts[1]}-01` : meta.publishedAt;
+      setPublishedAt(normalized);
+    }
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -96,7 +99,6 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
     onSubmit({
       title,
       seriesName: seriesName || undefined,
-      seriesOrder: seriesOrder ? parseInt(seriesOrder) : undefined,
       authors: authors.split(",").map((a) => a.trim()).filter(Boolean),
       isbn: isbn || undefined,
       publisher: publisher || undefined,
@@ -172,13 +174,9 @@ export default function BookForm({ initial, onSubmit, onCancel, loading }: Props
           <label className="form-label">{t("book.title")} *</label>
           <input required value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
         </div>
-        <div>
+        <div className="col-span-2">
           <label className="form-label">{t("book.seriesName")}</label>
           <input value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="input" />
-        </div>
-        <div>
-          <label className="form-label">{t("book.volumes")}</label>
-          <input type="number" min={1} value={seriesOrder} onChange={(e) => setSeriesOrder(e.target.value)} className="input" />
         </div>
         <div className="col-span-2">
           <label className="form-label">{t("book.authors")}</label>

@@ -38,14 +38,22 @@ export default function BooksPage() {
   const [groupBySeries, setGroupBySeries] = useState(true);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
+  const [publisher, setPublisher] = useState("");
+  const [author, setAuthor] = useState("");
+  const [mediaType, setMediaType] = useState("");
+
+  const { data: options } = useQuery({ queryKey: ["books-options"], queryFn: booksApi.getOptions });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["books", { search, status, genre, filterTag, minRating, page: groupBySeries ? 1 : page, sort, order }],
+    queryKey: ["books", { search, status, genre, filterTag, publisher, author, mediaType, minRating, page: groupBySeries ? 1 : page, sort, order }],
     queryFn: () => booksApi.list({
       search: search || undefined,
       status: status || undefined,
       genre: genre || undefined,
       tag: filterTag || undefined,
+      publisher: publisher || undefined,
+      author: author || undefined,
+      mediaType: mediaType || undefined,
       rating: minRating ? parseInt(minRating) : undefined,
       page: groupBySeries ? 1 : page,
       perPage: groupBySeries ? 500 : 20,
@@ -139,14 +147,32 @@ export default function BooksPage() {
         </select>
       </div>
       <div className="flex items-center gap-3 flex-wrap">
-        <input value={genre} onChange={(e) => { setGenre(e.target.value); setPage(1); }} placeholder={t("content.filterGenre")} className="input w-36 text-sm" />
-        <input value={filterTag} onChange={(e) => { setFilterTag(e.target.value); setPage(1); }} placeholder={t("content.filterTag")} className="input w-36 text-sm" />
+        <select value={genre} onChange={(e) => { setGenre(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allGenres")}</option>
+          {(options?.genres ?? []).map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+        <select value={filterTag} onChange={(e) => { setFilterTag(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allTags")}</option>
+          {(options?.tags ?? []).map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+        </select>
+        <select value={publisher} onChange={(e) => { setPublisher(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allPublishers")}</option>
+          {(options?.publishers ?? []).map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={author} onChange={(e) => { setAuthor(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allAuthors")}</option>
+          {(options?.authors ?? []).map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select value={mediaType} onChange={(e) => { setMediaType(e.target.value); setPage(1); }} className="input w-auto text-sm">
+          <option value="">{t("content.allMediaTypes")}</option>
+          {(options?.mediaTypes ?? []).map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
         <select value={minRating} onChange={(e) => { setMinRating(e.target.value); setPage(1); }} className="input w-auto text-sm">
           <option value="">{t("content.filterMinRating")}</option>
           {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>{r}+</option>)}
         </select>
-        {(genre || filterTag || minRating) && (
-          <button onClick={() => { setGenre(""); setFilterTag(""); setMinRating(""); setPage(1); }} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+        {(genre || filterTag || publisher || author || mediaType || minRating) && (
+          <button onClick={() => { setGenre(""); setFilterTag(""); setPublisher(""); setAuthor(""); setMediaType(""); setMinRating(""); setPage(1); }} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
             {t("content.filterClear")}
           </button>
         )}

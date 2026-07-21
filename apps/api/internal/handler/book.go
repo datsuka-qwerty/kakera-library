@@ -11,12 +11,15 @@ import (
 func ListBooks(c echo.Context) error {
 	userID := c.Get("userId").(string)
 	f := service.ListFilter{
-		Search: c.QueryParam("search"),
-		Status: c.QueryParam("status"),
-		Genre:  c.QueryParam("genre"),
-		Tag:    c.QueryParam("tag"),
-		Sort:   c.QueryParam("sort"),
-		Order:  c.QueryParam("order"),
+		Search:          c.QueryParam("search"),
+		Status:          c.QueryParam("status"),
+		Genre:           c.QueryParam("genre"),
+		Tag:             c.QueryParam("tag"),
+		Author:          c.QueryParam("author"),
+		Publisher:       c.QueryParam("publisher"),
+		MediaTypeFilter: c.QueryParam("mediaType"),
+		Sort:            c.QueryParam("sort"),
+		Order:           c.QueryParam("order"),
 	}
 	if r := c.QueryParam("rating"); r != "" {
 		v, _ := strconv.Atoi(r)

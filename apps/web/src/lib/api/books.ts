@@ -6,11 +6,22 @@ export interface BookListParams {
   status?: string;
   genre?: string;
   tag?: string;
+  author?: string;
+  publisher?: string;
+  mediaType?: string;
   rating?: number;
   page?: number;
   perPage?: number;
   sort?: string;
   order?: string;
+}
+
+export interface BookFilterOptions {
+  genres: string[];
+  tags: string[];
+  publishers: string[];
+  authors: string[];
+  mediaTypes: string[];
 }
 
 export interface PaginatedBooks {
@@ -47,4 +58,6 @@ export const booksApi = {
     apiClient.get<BookMeta[]>("/metadata/books", { params: { q, page } }).then((r) => r.data),
   lookupBarcode: (isbn: string) =>
     apiClient.get<BookMeta>(`/metadata/barcode/${isbn}`).then((r) => r.data),
+  getOptions: () =>
+    apiClient.get<BookFilterOptions>("/books/options").then((r) => r.data),
 };
