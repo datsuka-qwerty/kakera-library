@@ -301,7 +301,6 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
   const theme = useTheme();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
-  const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
   const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
   const [distributors, setDistributors] = useState(initial?.distributors?.join(", ") ?? "");
   const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
@@ -317,7 +316,7 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
   const [genres, setGenres] = useState<string[]>(initial?.genres ?? []);
   const [tmdbId, setTmdbId] = useState(initial?.tmdbId?.toString() ?? "");
   const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string }[]>([]);
-  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; studios?: string[] }[]>([]);
+  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; studios?: string[]; directors?: string[]; seriesName?: string; distributors?: string[] }[]>([]);
   const { language } = useLanguageStore();
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -355,6 +354,9 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
     if (m.releasedAt) setReleasedAt(m.releasedAt);
     if (m.genres?.length) setGenres(m.genres);
     if (m.studios?.length) setStudios(m.studios);
+    if (m.directors?.length) setDirectors(m.directors.join(", "));
+    if (m.seriesName) setSeriesName(m.seriesName);
+    if (m.distributors?.length) setDistributors(m.distributors.join(", "));
     setTmdbId(m.tmdbId.toString());
     setMetaResults([]);
     setMetaSearch("");
@@ -378,7 +380,6 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
       const payload = {
         title: title.trim(),
         seriesName: seriesName.trim() || undefined,
-        seriesOrder: seriesOrder ? parseInt(seriesOrder, 10) : undefined,
         directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
         distributors: distributors.split(",").map((d) => d.trim()).filter(Boolean),
         studios,
@@ -462,9 +463,6 @@ function MovieForm({ initial, onCancel, onSaved }: FormProps) {
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldSeriesName")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesName} onChangeText={setSeriesName} />
-
-        <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldSeriesOrder")}</Text>
-        <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={seriesOrder} onChangeText={setSeriesOrder} keyboardType="number-pad" />
 
         <Text style={[f.label, { color: theme.textMuted }]}>{t("content.fieldDirectors")}</Text>
         <TextInput style={[f.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]} value={directors} onChangeText={setDirectors}

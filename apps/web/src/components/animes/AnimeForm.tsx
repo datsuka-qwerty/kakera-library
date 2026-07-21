@@ -73,10 +73,9 @@ export default function AnimeForm({ initial, onSubmit, onCancel, loading }: Prop
     if (meta.coverImageUrl) setCoverImageUrl(meta.coverImageUrl);
     if (meta.releasedAt) setFirstSeasonAiredAt(meta.releasedAt);
     setTmdbId(meta.tmdbId.toString());
-    if (meta.totalSeasons) setTotalSeasons(meta.totalSeasons.toString());
     if (meta.genres?.length) setGenres(meta.genres);
     if (meta.studios?.length) setStudios(meta.studios);
-    if ((meta as { directors?: string[] }).directors?.length) setDirectors(((meta as { directors?: string[] }).directors ?? []).join(", "));
+    if (meta.directors?.length) setDirectors(meta.directors.join(", "));
     setMetaResults([]);
     setMetaSearch("");
   };

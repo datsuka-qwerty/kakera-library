@@ -22,7 +22,6 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
   const { t, i18n } = useTranslation();
   const [title, setTitle] = useState(initial?.title ?? "");
   const [seriesName, setSeriesName] = useState(initial?.seriesName ?? "");
-  const [seriesOrder, setSeriesOrder] = useState(initial?.seriesOrder?.toString() ?? "");
   const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
   const [releasedAt, setReleasedAt] = useState(initial?.releasedAt ?? "");
   const [watchedAt, setWatchedAt] = useState(initial?.watchedAt ?? "");
@@ -74,6 +73,9 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
     setTmdbId(meta.tmdbId.toString());
     if (meta.genres?.length) setGenres(meta.genres);
     if (meta.studios?.length) setStudios(meta.studios);
+    if (meta.directors?.length) setDirectors(meta.directors.join(", "));
+    if (meta.seriesName) setSeriesName(meta.seriesName);
+    if (meta.distributors?.length) setDistributors(meta.distributors.join(", "));
     setMetaResults([]);
     setMetaSearch("");
   };
@@ -89,7 +91,6 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
     onSubmit({
       title,
       seriesName: seriesName || undefined,
-      seriesOrder: seriesOrder ? parseInt(seriesOrder) : undefined,
       directors: directors.split(",").map((d) => d.trim()).filter(Boolean),
       distributors: distributors.split(",").map((d) => d.trim()).filter(Boolean),
       studios,
@@ -155,10 +156,6 @@ export default function MovieForm({ initial, onSubmit, onCancel, loading }: Prop
         <div>
           <label className="form-label">{t("movie.seriesName")}</label>
           <input value={seriesName} onChange={(e) => setSeriesName(e.target.value)} className="input" />
-        </div>
-        <div>
-          <label className="form-label">{t("movie.seriesOrder")}</label>
-          <input type="number" min={1} value={seriesOrder} onChange={(e) => setSeriesOrder(e.target.value)} className="input" />
         </div>
         <div className="col-span-2">
           <label className="form-label">{t("movie.directors")}</label>

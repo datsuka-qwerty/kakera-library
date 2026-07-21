@@ -41,6 +41,8 @@ export interface ContentMeta {
   totalSeasons?: number;
   studios?: string[];
   directors?: string[];
+  seriesName?: string;
+  distributors?: string[];
 }
 
 export const moviesApi = {

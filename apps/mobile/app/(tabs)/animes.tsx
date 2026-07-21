@@ -309,7 +309,7 @@ function AnimeForm({ initial, onCancel, onSaved }: FormProps) {
   const [directors, setDirectors] = useState(initial?.directors?.join(", ") ?? "");
   const [studios, setStudios] = useState<string[]>(initial?.studios ?? []);
   const [availableMediaTypes, setAvailableMediaTypes] = useState<{ id: string; name: string; key?: string; category: string }[]>([]);
-  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; totalSeasons?: number; studios?: string[] }[]>([]);
+  const [metaResults, setMetaResults] = useState<{ tmdbId: number; title: string; coverImageUrl?: string; releasedAt?: string; genres?: string[]; totalSeasons?: number; studios?: string[]; directors?: string[] }[]>([]);
   const { language } = useLanguageStore();
   const [metaSearch, setMetaSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -349,8 +349,8 @@ function AnimeForm({ initial, onCancel, onSaved }: FormProps) {
     if (m.releasedAt) setFirstSeasonAiredAt(m.releasedAt);
     if (m.genres?.length) setGenres(m.genres);
     if (m.studios?.length) setStudios(m.studios);
+    if (m.directors?.length) setDirectors(m.directors.join(", "));
     setTmdbId(m.tmdbId.toString());
-    if (m.totalSeasons) setTotalSeasons(m.totalSeasons.toString());
     setMetaResults([]);
     setMetaSearch("");
   };
