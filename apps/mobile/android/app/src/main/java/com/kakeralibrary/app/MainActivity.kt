@@ -1,7 +1,10 @@
 package com.kakeralibrary.app
 
+import android.app.LocaleManager
 import android.os.Build
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -12,6 +15,15 @@ import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
+    // Sync system per-app locale (Android 13+) into AppCompatDelegate so that
+    // expo-localization's getLocales() returns the correct per-app language.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      val localeManager = getSystemService(LocaleManager::class.java)
+      val appLocales = localeManager.applicationLocales
+      if (!appLocales.isEmpty) {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.wrap(appLocales))
+      }
+    }
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.

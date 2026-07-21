@@ -7,7 +7,7 @@ import { useLocales } from "expo-localization";
 import { useAuthStore } from "../store/authStore";
 import { useDarkModeStore } from "../store/darkModeStore";
 import { useLanguageStore } from "../store/languageStore";
-import "../lib/i18n";
+import i18n from "../lib/i18n";
 
 const LIGHT_BG = "#F5F0E8";
 const DARK_BG = "#111827";
@@ -30,19 +30,16 @@ function AuthGuard() {
 
 function SyncOSLanguage() {
   const locales = useLocales();
-  const setLanguage = useLanguageStore((s) => s.setLanguage);
 
   useEffect(() => {
     const osLocale = locales[0]?.languageCode ?? "";
-    const { language, lastOSLocale } = useLanguageStore.getState();
-    if (lastOSLocale === osLocale) return;
     const supported: Array<"ja" | "en"> = ["ja", "en"];
-    const next: "ja" | "en" = supported.includes(osLocale as "ja" | "en")
+    const lang: "ja" | "en" = supported.includes(osLocale as "ja" | "en")
       ? (osLocale as "ja" | "en")
-      : language;
-    setLanguage(next);
-    useLanguageStore.setState({ lastOSLocale: osLocale });
-  }, [locales, setLanguage]);
+      : "ja";
+    i18n.changeLanguage(lang);
+    useLanguageStore.setState({ language: lang });
+  }, [locales]);
 
   return null;
 }
