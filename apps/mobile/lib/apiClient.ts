@@ -21,6 +21,11 @@ client.interceptors.response.use(
   (res) => res,
   async (err) => {
     if (err.response?.status !== 401) return Promise.reject(err);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((err.config as any)._isRetry) {
+      useAuthStore.getState().clearAuth();
+      return Promise.reject(err);
+    }
 
     const { refreshToken, serverUrl } = useAuthStore.getState();
     if (!refreshToken) {
@@ -28,6 +33,8 @@ client.interceptors.response.use(
       return Promise.reject(err);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (err.config as any)._isRetry = true;
     try {
       if (!refreshing) {
         refreshing = axios

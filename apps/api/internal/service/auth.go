@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -149,8 +151,8 @@ func IssueTokens(ctx context.Context, userID, role string) (*TokenPair, error) {
 }
 
 func issueTokenPair(ctx context.Context, userID, role string) (*TokenPair, error) {
-	accessTTL, _ := time.ParseDuration(getenv("JWT_ACCESS_TTL", "15m"))
-	refreshTTL, _ := time.ParseDuration(getenv("JWT_REFRESH_TTL", "168h")) // 7d
+	accessTTL := parseDuration(getenv("JWT_ACCESS_TTL", "1h"), time.Hour)
+	refreshTTL := parseDuration(getenv("JWT_REFRESH_TTL", "720h"), 720*time.Hour) // 30d
 
 	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": userID,
@@ -187,6 +189,19 @@ func hashToken(raw string) string {
 func getenv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return fallback
+}
+
+// parseDuration extends time.ParseDuration to support "d" suffix for days.
+func parseDuration(s string, fallback time.Duration) time.Duration {
+	if strings.HasSuffix(s, "d") {
+		if days, err := strconv.Atoi(strings.TrimSuffix(s, "d")); err == nil && days > 0 {
+			return time.Duration(days) * 24 * time.Hour
+		}
+	}
+	if d, err := time.ParseDuration(s); err == nil && d > 0 {
+		return d
 	}
 	return fallback
 }
