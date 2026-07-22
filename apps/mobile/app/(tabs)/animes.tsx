@@ -18,6 +18,12 @@ import { useAccent, useTheme } from "../../lib/theme";
 
 const ANIME_FILTER_VALUES = ["", "interested", "watching", "completed", "dropped"];
 const ANIME_FORM_STATUS: AnimeStatus[] = ["interested", "watching", "completed", "dropped"];
+const ANIME_SORT_OPTIONS = [
+  { value: "created_at", label: "sort.addedDate" },
+  { value: "first_season_aired_at", label: "sort.airedDate" },
+  { value: "title", label: "sort.title" },
+  { value: "rating", label: "sort.rating" },
+] as const;
 
 export default function AnimesScreen() {
   const { t } = useTranslation();
@@ -38,6 +44,8 @@ export default function AnimesScreen() {
   const [loadError, setLoadError] = useState(false);
   const [director, setDirector] = useState("");
   const [studio, setStudio] = useState("");
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [filterOptions, setFilterOptions] = useState<{ genres: string[]; tags: string[]; directors: string[]; studios: string[] }>({ genres: [], tags: [], directors: [], studios: [] });
 
   useEffect(() => {
@@ -74,6 +82,8 @@ export default function AnimesScreen() {
         director: director || undefined,
         studio: studio || undefined,
         rating: minRating > 0 ? minRating : undefined,
+        sort,
+        order,
       });
       setAnimes(res.data);
       setLoadError(false);
@@ -82,7 +92,7 @@ export default function AnimesScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, genre, filterTag, director, studio, minRating]);
+  }, [search, status, genre, filterTag, director, studio, minRating, sort, order]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -113,6 +123,23 @@ export default function AnimesScreen() {
         </Pressable>
       </View>
 
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {ANIME_SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            style={[s.filterChip, { backgroundColor: sort === opt.value ? accent : theme.borderLight }]}
+            onPress={() => {
+              if (sort === opt.value) setOrder(o => o === "desc" ? "asc" : "desc");
+              else { setSort(opt.value); setOrder("desc"); }
+            }}
+          >
+            <Text style={[s.filterChipText, { color: sort === opt.value ? "#fff" : theme.textSub }]}>
+              {t(opt.label)}{sort === opt.value ? (order === "desc" ? " ↓" : " ↑") : ""}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {ANIME_FILTER_VALUES.map((sv) => (

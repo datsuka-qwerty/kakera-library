@@ -28,6 +28,7 @@ export default function BarcodeScreen() {
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     const isbn = data.trim();
+    if (!/^97[89]\d{10}$/.test(isbn)) return;
     if (
       scanning ||
       pendingIsbns.has(isbn) ||

@@ -18,6 +18,12 @@ import { useAccent, useTheme } from "../../lib/theme";
 
 const MOVIE_FILTER_VALUES = ["", "unwatched", "watched"];
 const MOVIE_FORM_STATUS: MovieStatus[] = ["unwatched", "watched"];
+const MOVIE_SORT_OPTIONS = [
+  { value: "created_at", label: "sort.addedDate" },
+  { value: "released_at", label: "sort.releasedDate" },
+  { value: "title", label: "sort.title" },
+  { value: "rating", label: "sort.rating" },
+] as const;
 
 export default function MoviesScreen() {
   const { t } = useTranslation();
@@ -39,6 +45,8 @@ export default function MoviesScreen() {
   const [director, setDirector] = useState("");
   const [studio, setStudio] = useState("");
   const [distributor, setDistributor] = useState("");
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [filterOptions, setFilterOptions] = useState<{ genres: string[]; tags: string[]; directors: string[]; studios: string[]; distributors: string[] }>({ genres: [], tags: [], directors: [], studios: [], distributors: [] });
 
   useEffect(() => {
@@ -74,6 +82,8 @@ export default function MoviesScreen() {
         studio: studio || undefined,
         distributor: distributor || undefined,
         rating: minRating > 0 ? minRating : undefined,
+        sort,
+        order,
       });
       setMovies(res.data);
       setLoadError(false);
@@ -82,7 +92,7 @@ export default function MoviesScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, genre, filterTag, director, studio, distributor, minRating]);
+  }, [search, status, genre, filterTag, director, studio, distributor, minRating, sort, order]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -113,6 +123,23 @@ export default function MoviesScreen() {
         </Pressable>
       </View>
 
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {MOVIE_SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            style={[s.filterChip, { backgroundColor: sort === opt.value ? accent : theme.borderLight }]}
+            onPress={() => {
+              if (sort === opt.value) setOrder(o => o === "desc" ? "asc" : "desc");
+              else { setSort(opt.value); setOrder("desc"); }
+            }}
+          >
+            <Text style={[s.filterChipText, { color: sort === opt.value ? "#fff" : theme.textSub }]}>
+              {t(opt.label)}{sort === opt.value ? (order === "desc" ? " ↓" : " ↑") : ""}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {MOVIE_FILTER_VALUES.map((sv) => (

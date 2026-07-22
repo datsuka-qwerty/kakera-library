@@ -18,6 +18,12 @@ import { getMediaTypeName } from "../../lib/mediaTypeLabels";
 
 const BOOK_FILTER_VALUES = ["", "want_to_read", "reading", "completed", "on_hold"];
 const BOOK_FORM_STATUS: BookStatus[] = ["want_to_read", "reading", "completed", "on_hold"];
+const BOOK_SORT_OPTIONS = [
+  { value: "created_at", label: "sort.addedDate" },
+  { value: "published_at", label: "sort.publishedDate" },
+  { value: "title", label: "sort.title" },
+  { value: "rating", label: "sort.rating" },
+] as const;
 
 export default function BooksScreen() {
   const { t } = useTranslation();
@@ -38,6 +44,8 @@ export default function BooksScreen() {
   const [loadError, setLoadError] = useState(false);
   const [publisher, setPublisher] = useState("");
   const [author, setAuthor] = useState("");
+  const [sort, setSort] = useState("created_at");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [filterOptions, setFilterOptions] = useState<{ genres: string[]; tags: string[]; publishers: string[]; authors: string[]; mediaTypes: string[] }>({ genres: [], tags: [], publishers: [], authors: [], mediaTypes: [] });
 
   useEffect(() => {
@@ -72,6 +80,8 @@ export default function BooksScreen() {
         publisher: publisher || undefined,
         author: author || undefined,
         rating: minRating > 0 ? minRating : undefined,
+        sort,
+        order,
       });
       setBooks(res.data);
       setLoadError(false);
@@ -80,7 +90,7 @@ export default function BooksScreen() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, genre, filterTag, publisher, author, minRating]);
+  }, [search, status, genre, filterTag, publisher, author, minRating, sort, order]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -114,6 +124,23 @@ export default function BooksScreen() {
         </Pressable>
       </View>
 
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+        {BOOK_SORT_OPTIONS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            style={[s.filterChip, { backgroundColor: sort === opt.value ? accent : theme.borderLight }]}
+            onPress={() => {
+              if (sort === opt.value) setOrder(o => o === "desc" ? "asc" : "desc");
+              else { setSort(opt.value); setOrder("desc"); }
+            }}
+          >
+            <Text style={[s.filterChipText, { color: sort === opt.value ? "#fff" : theme.textSub }]}>
+              {t(opt.label)}{sort === opt.value ? (order === "desc" ? " ↓" : " ↑") : ""}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {BOOK_FILTER_VALUES.map((sv) => (

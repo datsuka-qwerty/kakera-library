@@ -10,6 +10,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: accent,
@@ -24,13 +25,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
-        options={{
-          title: t("tabs.home"),
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => <LayoutDashboard color={color} size={size - 2} />,
-        }}
-      />
-      <Tabs.Screen
         name="books"
         options={{
           title: t("tabs.books"),
@@ -42,6 +36,13 @@ export default function TabLayout() {
         options={{
           title: t("tabs.movies"),
           tabBarIcon: ({ color, size }: { color: string; size: number }) => <Film color={color} size={size - 2} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t("tabs.home"),
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <LayoutDashboard color={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen

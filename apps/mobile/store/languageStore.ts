@@ -24,6 +24,11 @@ export const useLanguageStore = create<LanguageState>()(
     {
       name: "kakera-language",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state?.language) {
+          i18n.changeLanguage(state.language);
+        }
+      },
     }
   )
 );

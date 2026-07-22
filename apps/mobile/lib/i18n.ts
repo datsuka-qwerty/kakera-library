@@ -323,6 +323,14 @@ const ja = {
       logoutConfirm: "ログアウトしますか？",
       loadMore: "もっと見る",
     },
+    sort: {
+      addedDate: "追加日",
+      publishedDate: "出版日",
+      releasedDate: "公開日",
+      airedDate: "放送日",
+      title: "タイトル",
+      rating: "評価",
+    },
   },
 };
 
@@ -647,6 +655,14 @@ const en = {
       logout: "Log Out",
       logoutConfirm: "Log out?",
       loadMore: "Load More",
+    },
+    sort: {
+      addedDate: "Added",
+      publishedDate: "Published",
+      releasedDate: "Released",
+      airedDate: "Aired",
+      title: "Title",
+      rating: "Rating",
     },
   },
 };

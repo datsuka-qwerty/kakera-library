@@ -9,7 +9,7 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { X, LogOut } from "lucide-react-native";
+import { X, LogOut, ChevronDown, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { api } from "../lib/apiClient";
@@ -96,7 +96,7 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [langSaved, setLangSaved] = useState(false);
-  const [selectedLang, setSelectedLang] = useState<"ja" | "en">(language);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const save = async () => {
     setSaving(true);
@@ -114,10 +114,13 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
     }
   };
 
-  const applyLanguage = () => {
-    setLanguage(selectedLang);
-    setLangSaved(true);
-    setTimeout(() => setLangSaved(false), 2000);
+  const handleLanguageSelect = (lang: "ja" | "en") => {
+    setDropdownOpen(false);
+    if (lang !== language) {
+      setLanguage(lang);
+      setLangSaved(true);
+      setTimeout(() => setLangSaved(false), 2000);
+    }
   };
 
   const langs: { code: "ja" | "en"; label: string; sublabel: string }[] = [
@@ -137,30 +140,32 @@ function ProfileTab({ user }: { user: { username: string } | null }) {
 
       <View style={[f.divider, { borderTopColor: theme.border }]} />
       <Text style={[f.sectionHeader, { color: theme.text }]}>言語 / Language</Text>
-      <View style={[f.card, { backgroundColor: theme.card }]}>
-        {langs.map((l, i) => (
-          <Pressable
-            key={l.code}
-            style={[f.langRow, i > 0 && { borderTopWidth: 1, borderTopColor: theme.borderLight }]}
-            onPress={() => setSelectedLang(l.code)}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[f.shareUser, { color: theme.text }]}>{l.label}</Text>
-              <Text style={[f.description, { color: theme.textMuted }]}>{l.sublabel}</Text>
-            </View>
-            <View style={[f.radio, { borderColor: selectedLang === l.code ? accent : theme.border }]}>
-              {selectedLang === l.code && <View style={[f.radioDot, { backgroundColor: accent }]} />}
-            </View>
-          </Pressable>
-        ))}
-      </View>
       <Pressable
-        style={[f.btn, { backgroundColor: accent }, selectedLang === language && f.btnDisabled]}
-        onPress={applyLanguage}
-        disabled={selectedLang === language}
+        style={[f.dropdown, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={() => setDropdownOpen(v => !v)}
       >
-        <Text style={[f.btnText, { color: theme.accentFg }]}>{t("profile.applyLanguage")}</Text>
+        <Text style={[f.dropdownValue, { color: theme.text }]}>
+          {langs.find(l => l.code === language)?.label ?? ""}
+        </Text>
+        <ChevronDown size={16} color={theme.textSub} />
       </Pressable>
+      {dropdownOpen && (
+        <View style={[f.dropdownMenu, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          {langs.map((l, i) => (
+            <Pressable
+              key={l.code}
+              style={[f.dropdownOption, i < langs.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.borderLight }]}
+              onPress={() => handleLanguageSelect(l.code)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[f.shareUser, { color: theme.text }]}>{l.label}</Text>
+                <Text style={[f.description, { color: theme.textMuted }]}>{l.sublabel}</Text>
+              </View>
+              {language === l.code && <Check size={16} color={accent} />}
+            </Pressable>
+          ))}
+        </View>
+      )}
       {langSaved && <Text style={{ fontSize: 13, color: "#16A34A", textAlign: "center" }}>{t("profile.languageChanged")}</Text>}
       <Text style={[f.description, { color: theme.textMuted, lineHeight: 18 }]}>
         {t("profile.langHint")}
@@ -681,7 +686,10 @@ const f = StyleSheet.create({
   divider: { borderTopWidth: 1, marginVertical: 4 },
   card: { borderRadius: 12, padding: 14, gap: 8 },
   shareRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1 },
-  langRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
+  dropdown: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12, borderRadius: 10, borderWidth: 1 },
+  dropdownValue: { fontSize: 15, fontWeight: "500" },
+  dropdownMenu: { borderRadius: 10, borderWidth: 1, marginTop: 4, overflow: "hidden" },
+  dropdownOption: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12 },
   shareUser: { fontSize: 14 },
   viewLink: { fontSize: 13, fontWeight: "500" },
   deleteText: { fontSize: 13 },
@@ -696,6 +704,4 @@ const f = StyleSheet.create({
   mediaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 10, marginBottom: 6 },
   mediaName: { fontSize: 14, flex: 1, marginRight: 8 },
   defaultBadge: { fontSize: 11, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  radioDot: { width: 10, height: 10, borderRadius: 5 },
 });
