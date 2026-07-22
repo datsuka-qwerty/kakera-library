@@ -42,7 +42,9 @@ Run: `npm run dev` from `apps/web/`
 
 ## apps/mobile (React Native + Expo)
 
-- **Screens**: `app/(tabs)/` — index (dashboard), books, movies, dramas; plus `app/login.tsx`, `app/barcode.tsx`, `app/settings.tsx`
+- **Screens**: `app/(tabs)/` — index, books, movies, dramas, animes
+  - Extra screens: `login.tsx`, `barcode.tsx`, `settings.tsx`
+- **Tab order**: books → movies → index（default）→ dramas → animes
 - **Auth guard**: `app/_layout.tsx` — redirects unauthenticated users to `/login`
 - **State**: Zustand + AsyncStorage in `store/authStore.ts`
 - **API client**: `lib/apiClient.ts` — reads `serverUrl` from store, JWT refresh interceptor
