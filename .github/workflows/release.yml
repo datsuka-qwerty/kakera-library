@@ -6,7 +6,7 @@ on:
 
 jobs:
   android-apk:
-    name: Build Android APK
+    name: Build Android APKs (per architecture)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -51,7 +51,7 @@ jobs:
             echo "debug.keystore already exists, skipping generation"
           fi
 
-      - name: Build release APK
+      - name: Build release APKs (per architecture)
         working-directory: apps/mobile/android
         env:
           NODE_PATH: ${{ github.workspace }}/apps/mobile/node_modules
@@ -59,13 +59,21 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
 
-      - name: Rename APK with version tag
+      - name: Rename APKs with version tag and architecture
         run: |
           TAG="${{ github.event.release.tag_name }}"
-          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk \
-             kakera-library-${TAG}-android.apk
+          SRC_DIR="apps/mobile/android/app/build/outputs/apk/release"
+          ls -la "$SRC_DIR"
+          for apk in "$SRC_DIR"/app-*-release.apk; do
+            base=$(basename "$apk")
+            # app-arm64-v8a-release.apk -> arm64-v8a
+            abi=${base#app-}
+            abi=${abi%-release.apk}
+            cp "$apk" "kakera-library-${TAG}-android-${abi}.apk"
+          done
+          ls -la kakera-library-${TAG}-android-*.apk
 
-      - name: Upload APK to release
+      - name: Upload APKs to release
         uses: softprops/action-gh-release@v2
         with:
-          files: kakera-library-${{ github.event.release.tag_name }}-android.apk
+          files: kakera-library-${{ github.event.release.tag_name }}-android-*.apk
