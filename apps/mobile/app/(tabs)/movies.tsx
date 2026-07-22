@@ -19,8 +19,8 @@ import { useAccent, useTheme } from "../../lib/theme";
 const MOVIE_FILTER_VALUES = ["", "unwatched", "watched"];
 const MOVIE_FORM_STATUS: MovieStatus[] = ["unwatched", "watched"];
 const MOVIE_SORT_OPTIONS = [
-  { value: "created_at", label: "sort.addedDate" },
-  { value: "released_at", label: "sort.releasedDate" },
+  { value: "created_at", label: "sort.createdAt" },
+  { value: "released_at", label: "sort.releasedAt" },
   { value: "title", label: "sort.title" },
   { value: "rating", label: "sort.rating" },
 ] as const;
@@ -123,23 +123,33 @@ export default function MoviesScreen() {
         </Pressable>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-        {MOVIE_SORT_OPTIONS.map((opt) => (
-          <Pressable
-            key={opt.value}
-            style={[s.filterChip, { backgroundColor: sort === opt.value ? accent : theme.borderLight }]}
-            onPress={() => {
-              if (sort === opt.value) setOrder(o => o === "desc" ? "asc" : "desc");
-              else { setSort(opt.value); setOrder("desc"); }
-            }}
-          >
-            <Text style={[s.filterChipText, { color: sort === opt.value ? "#fff" : theme.textSub }]}>
-              {t(opt.label)}{sort === opt.value ? (order === "desc" ? " ↓" : " ↑") : ""}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={s.sortBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}
+          contentContainerStyle={{ gap: 6, paddingLeft: 16 }}>
+          {MOVIE_SORT_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt.value}
+              style={[s.sortPill, {
+                backgroundColor: sort === opt.value ? accent : "transparent",
+                borderColor: sort === opt.value ? accent : theme.border,
+              }]}
+              onPress={() => setSort(opt.value)}
+            >
+              <Text style={[s.sortPillText, { color: sort === opt.value ? "#fff" : theme.textSub }]}>
+                {t(opt.label)}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <Pressable
+          style={[s.orderToggle, { borderColor: theme.border }]}
+          onPress={() => setOrder(o => o === "desc" ? "asc" : "desc")}
+        >
+          <Text style={[s.orderToggleText, { color: theme.textSub }]}>
+            {order === "desc" ? "↓" : "↑"} {t(`sort.${order}`)}
+          </Text>
+        </Pressable>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}
         contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
         {MOVIE_FILTER_VALUES.map((sv) => (
@@ -609,6 +619,11 @@ const s = StyleSheet.create({
   searchRow: { flex: 1, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, gap: 6 },
   searchInput: { flex: 1, paddingVertical: 9, fontSize: 14 },
   iconBtn: { borderRadius: 10, padding: 10 },
+  sortBar: { flexDirection: "row", alignItems: "center", marginBottom: 4, paddingRight: 12 },
+  sortPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
+  sortPillText: { fontSize: 12 },
+  orderToggle: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, borderWidth: 1, marginLeft: 6 },
+  orderToggleText: { fontSize: 12 },
   filterRow: { flexGrow: 0, marginBottom: 4 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   filterChipText: { fontSize: 13 },
