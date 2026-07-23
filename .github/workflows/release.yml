@@ -69,7 +69,13 @@ jobs:
             # app-arm64-v8a-release.apk -> arm64-v8a
             abi=${base#app-}
             abi=${abi%-release.apk}
-            cp "$apk" "kakera-library-${TAG}-android-${abi}.apk"
+            # Use friendlier labels for the ARM ABIs
+            case "$abi" in
+              armeabi-v7a) label="arm-v7a" ;;
+              arm64-v8a) label="arm-v8a" ;;
+              *) label="$abi" ;;
+            esac
+            cp "$apk" "kakera-library-${TAG}-android-${label}.apk"
           done
           ls -la kakera-library-${TAG}-android-*.apk
 
